@@ -16,39 +16,24 @@ require(reshape)
 droppath<-"C:/Users/Jorge/Dropbox/"
 setwd(droppath)
 
-#Define selectivity function
-selective<-function(y){
-  #Aggregate time by species and treatment
-  Total_Time<-aggregate(y$Time_Feeder_Obs,by=list(y$Species,y$Treatment),sum, na.rm=TRUE)
-  
-  #Divide time on high value resource by total time on feeder
-  melt.time<-melt(Total_Time)
-  cast.time<-as.data.frame(cast(melt.time,Group.1~Group.2 ))
-  
-  #Set the NAs to 0, if bird was not present on one of the resources
-  cast.time[is.na(cast.time)]<- 0
-  selectivity<-cbind(cast.time,cast.time$H/(cast.time$H+cast.time$L))
-  colnames(selectivity)<-c("Species","Time_High","Time_Low","Selectivity")
-  
-  #return output
-  return(selectivity)}
+#set gitpath
+gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+
+#source functions
+source("functions.R")
 
 ##Read in data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
 
-###############
-#Data Cleaning
-###############
-levels(dat$Species)[levels(dat$Species) %in% "Purple bibbed whitetip"]<-"Purple-bibbed Whitetip"
-
-#How many videos do we have for each elevation and treatment?
-vid_totals<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment),function(x) nlevels(droplevels(x)))
-vid_totals<-cast(vid_totals,Group.1~Group.2)
+############################
+#Data Cleaning and Sampling
+############################
 
 #Which dates need to be matched?
-vid_totals_date<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment,dat$Date),function(x) nlevels(droplevels(x)))
-vid_totals_date<-cast(vid_totals_date,Group.1 + Group.3~Group.2)
+vid_totals_date<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment,dat$Date,dat$Replicate),function(x) nlevels(droplevels(x)))
+vid_totals_date<-cast(vid_totals_date,Group.1 + Group.3 + Group.4~Group.2)
 
+print(vid_totals_date)
 #Species richness and identity at each elevation
 sp_matrixHL<-(table(dat$Species,dat$Elevation,dat$Treatment) >= 1) * 1
 
@@ -59,14 +44,11 @@ colnames(m.sp_m)<-c("Species","Elevation","Treatment","Presence")
 #turn 0's to NA's just for plotting
 m.sp_m[m.sp_m$Presence==0,"Presence"]<-NA
 
-#View as tiles
-p<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile()  + facet_wrap(~Treatment) + theme_bw() + scale_fill_discrete(na.value="white")
-p + labs(fill="Present",x="Elevation")
-#ggsave()
 
 #richness across feeders
 p<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile() + theme_bw() + scale_fill_discrete(na.value="white")
 p + labs(fill="Present",x="Elevation")
+ggsave(paste(gitpath,"Figures/RangeExtentFeeders.svg",sep=""),dpi=300,height=8,width=11)
 
 #####################
 #Time on the feeders
@@ -90,11 +72,12 @@ ggplot(Total_Time_Species,aes(Species,minutes(TotalTime))) + geom_bar() + theme_
 
 #Average time feeding for all species, and each species
 ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()
+ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
 
 ####Match each trial together, trials are done on the same day at the same elevation
 #Split data into a list, with each compenent being one trial pair
 
-Trials<-split(dat, list(dat$Elevation,dat$Date),drop=TRUE)
+Trials<-split(dat, list(dat$Elevation,dat$Date,dat$Replicate),drop=TRUE)
 
 #####Just for data clarity remove any trials that down have high and low value data entered
 #Get number of levels per trial
@@ -124,7 +107,7 @@ selective.matrix$Minutes_Total<-selective.matrix$Minutes_Low+selective.matrix$Mi
 #Rename column
 colnames(selective.matrix)[1]<-"Elevation"
 
-#Add month column?
+#Add month column
 selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%Y"),"%b")
 
 ###############
@@ -132,14 +115,16 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 ###############
 
 #unweighted
-p<-ggplot(selective.matrix,aes(x=factor(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + geom_smooth(aes(group=1))
+p<-ggplot(selective.matrix,aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1))
 p + ylim(0,1)
-ggsave(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
+ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 #weighted
-p<-ggplot(selective.matrix,aes(x=as.numeric(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species,scales="free")
-p
-p  + geom_smooth(method="glm",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
+p<-ggplot(selective.matrix[selective.matrix$Species=="Collared Inca",],aes(x=factor(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
+p  + stat_smooth(method="glm",aes(weight=Minutes_Total,group=1)) + theme_bw() + xlab("Elevation") 
+
++ scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
+ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 # #weighted and time
 # p<-ggplot(selective.matrix,aes(x=as.numeric(Elevation),Selectivity,col=MonthA,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
