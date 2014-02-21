@@ -1,8 +1,6 @@
 #Ben Weinstein - Code and Project Design
 #Lisa Dittmar and Ben Weinstein reviewed the videos
 
-#Graham Lab, Stony Brook University 10/27/2013
-
 ##Competition Feeder Experiments
 # A High value resource is placed alongside a low value resource
 #Our goal is measure selectivity of each species at each elevation
@@ -12,20 +10,21 @@ require(ggplot2)
 require(chron)
 require(reshape)
 
-#Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
-setwd(droppath)
-
 #set gitpath
-gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+gitpath<-"C:/Users/Ben/Documents/Selectivity/"
 
 #source functions
-source("functions.R")
+source(paste(gitpath,"functions.R",sep=""))
+
+#Set working directory
+droppath<-"C:/Users/Ben/Dropbox/"
+setwd(droppath)
 
 ##Read in data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
 
 dat$Sex<-toupper(dat$Sex)
+
 #Bring in Hummingbird Morphology Dataset, comes from
 hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
 
@@ -47,7 +46,6 @@ colnames(m.sp_m)<-c("Species","Elevation","Treatment","Presence")
 
 #turn 0's to NA's just for plotting
 m.sp_m[m.sp_m$Presence==0,"Presence"]<-NA
-
 
 #richness across feeders
 p<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile() + theme_bw() + scale_fill_discrete(na.value="white")
@@ -71,20 +69,40 @@ dat[which(dat$Time_Feeder_Obs < 0),]
 #Total Time per species
 Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),sum,na.rm=TRUE) 
 colnames(Total_Time_Species)<-c("Species","TotalTime")
-ggplot(Total_Time_Species,aes(Species,minutes(TotalTime))) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+Total_Time_Species$Time<-minutes(Total_Time_Species$TotalTime)+seconds(Total_Time_Species$TotalTime)/60
+ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
-#which species have fed more than 2min
-#ggsave
+#mean time feeding bout
+Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
+colnames(Mean_Time_Species)<-c("Species","Mean_Time")
+ggplot(Mean_Time_Species,aes(Species,Mean_Time)) + geom_bar() + theme(axis.text.x=element_text(angle=-90))
 
 #Average time feeding for all species, and each species
 ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()
 ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
+
+#average visits per hour
+
+S_H<-table(hours(dat$Time.Begin),dat$Species)
+
+#Create a species list for each video
 
 ####Match each trial together, trials are done on the same day at the same elevation
 #Split data into a list, with each compenent being one trial pair
 
 Trials<-split(dat, list(dat$Elevation,dat$Date,dat$Replicate),drop=TRUE)
 
+#Birds per hour
+bph<-melt(lapply(Trials,function(x){
+  bird_hour<-table(droplevels(x$Species),hours(x$Time.Begin))
+  p<-apply(bird_hour,1,mean)
+  return(data.frame(Species=names(p),BPH=p))}))
+
+#split out column
+bph<-data.frame(bph,colsplit(bph$L1,c("Elevation","Date","Replicate"),split="\\."))
+head(bph)
+
+ggplot(bph,aes(y=value,x=Species)) + geom_boxplot()
 #####Just for data clarity remove any trials that down have high and low value data entered
 #Get number of levels per trial
 levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
@@ -121,7 +139,6 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 ########################################
 
 #get only species that have atleast 2min
-
 sumT<-aggregate(selective.matrix$Minutes_Total,list(selective.matrix$Species),sum)
 speciesSkip<-sumT[sumT$x < 2,]$Group.1
 
