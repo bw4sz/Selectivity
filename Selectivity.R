@@ -25,6 +25,10 @@ source("functions.R")
 ##Read in data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
 
+dat$Sex<-toupper(dat$Sex)
+#Bring in Hummingbird Morphology Dataset, comes from
+hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
+
 ############################
 #Data Cleaning and Sampling
 ############################
@@ -68,6 +72,8 @@ dat[which(dat$Time_Feeder_Obs < 0),]
 Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),sum,na.rm=TRUE) 
 colnames(Total_Time_Species)<-c("Species","TotalTime")
 ggplot(Total_Time_Species,aes(Species,minutes(TotalTime))) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+
+#which species have fed more than 2min
 #ggsave
 
 #Average time feeding for all species, and each species
@@ -100,8 +106,8 @@ selective.matrix$Time_Low<-times(selective.matrix$Time_Low)
 selective.matrix$Total_Time<-selective.matrix$Time_High + selective.matrix$Time_Low
 
 #add total minutes feeding as a weight
-selective.matrix$Minutes_High<-minutes(selective.matrix$Time_High)+minutes(selective.matrix$Time_High)
-selective.matrix$Minutes_Low<-minutes(selective.matrix$Time_Low)+minutes(selective.matrix$Time_Low)
+selective.matrix$Minutes_High<-minutes(selective.matrix$Time_High) + seconds(selective.matrix$Time_High)/60
+selective.matrix$Minutes_Low<-minutes(selective.matrix$Time_Low) + seconds(selective.matrix$Time_Low)/60
 selective.matrix$Minutes_Total<-selective.matrix$Minutes_Low+selective.matrix$Minutes_High
 
 #Rename column
@@ -110,26 +116,29 @@ colnames(selective.matrix)[1]<-"Elevation"
 #Add month column
 selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%Y"),"%b")
 
-###############
-#Plotting Selectivity
-###############
+########################################
+#Plotting Selectivity across elevation
+########################################
+
+#get only species that have atleast 2min
+
+sumT<-aggregate(selective.matrix$Minutes_Total,list(selective.matrix$Species),sum)
+speciesSkip<-sumT[sumT$x < 2,]$Group.1
 
 #unweighted
-p<-ggplot(selective.matrix,aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1))
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1))
 p + ylim(0,1)
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 #weighted
-p<-ggplot(selective.matrix[selective.matrix$Species=="Collared Inca",],aes(x=factor(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
-p  + stat_smooth(method="glm",aes(weight=Minutes_Total,group=1)) + theme_bw() + xlab("Elevation") 
-
-+ scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=as.numeric(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
+p  + stat_smooth(method="glm",family="binomial") + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 # #weighted and time
-# p<-ggplot(selective.matrix,aes(x=as.numeric(Elevation),Selectivity,col=MonthA,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
-# p
-# p  + geom_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + stat_smooth()
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=as.numeric(Elevation),Selectivity,col=MonthA,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
+p
+p  + geom_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + stat_smooth()
 
 ## Write selectivity tables to file
 write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
@@ -142,12 +151,9 @@ head(selective.matrix)
 #######################################
 
 #Selectivity Descriptors for each species
-ggplot(selective.matrix,aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
 #merge with morphology
-
-#Bring in Hummingbird Morphology Dataset, comes from
-hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
 
 #PCA of trait space
 
@@ -171,7 +177,7 @@ rownames(hum_load)<-rownames(zscore)
 
 hum.morph<-merge(hum.morph,hum_load,by.x="English",by.y="row.names")
 
-#merge with selectivity
+#merge PCA and original data with selectivity
 selective.matrix<-merge(selective.matrix,hum.morph[,!colnames(hum.morph) %in% "Species"],by.x="Species",by.y="English")
 
 #Weighted average of selectivity
@@ -185,15 +191,21 @@ selective.matrix<-merge(selective.matrix,data.frame(weighted.selectivity=ws),by.
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
 colnames(wss)<-c("Species","PC1","PC2","weighted.selectivity")
 
-ggplot(wss,aes(x=PC2,y=weighted.selectivity)) + geom_point() + geom_smooth(method="lm") + geom_text(aes(label=Species),size=2)
-ggplot(wss,aes(x=PC1,y=weighted.selectivity)) + geom_point() + geom_smooth(method="lm") + geom_text(aes(label=Species),size=2)
+ggplot(wss,aes(x=PC2,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
+ggplot(wss,aes(x=PC1,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
 
 p<-ggplot(selective.matrix,aes(x=PC1,y=Selectivity,size=Minutes_Total,label=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total))
 p
 
 p<-ggplot(selective.matrix,aes(x=PC2,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
 p
-######
+
+##########################################
+#Selectivity as a function of body size
+###################################
+
+p<-ggplot(selective.matrix,aes(x=Mass,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
+p
 
 
 ##########################################
