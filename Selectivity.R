@@ -82,27 +82,14 @@ ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()
 ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
 
 #average visits per hour
-
 S_H<-table(hours(dat$Time.Begin),dat$Species)
 
 #Create a species list for each video
 
 ####Match each trial together, trials are done on the same day at the same elevation
 #Split data into a list, with each compenent being one trial pair
-
 Trials<-split(dat, list(dat$Elevation,dat$Date,dat$Replicate),drop=TRUE)
 
-#Birds per hour
-bph<-melt(lapply(Trials,function(x){
-  bird_hour<-table(droplevels(x$Species),hours(x$Time.Begin))
-  p<-apply(bird_hour,1,mean)
-  return(data.frame(Species=names(p),BPH=p))}))
-
-#split out column
-bph<-data.frame(bph,colsplit(bph$L1,c("Elevation","Date","Replicate"),split="\\."))
-head(bph)
-
-ggplot(bph,aes(y=value,x=Species)) + geom_boxplot()
 #####Just for data clarity remove any trials that down have high and low value data entered
 #Get number of levels per trial
 levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
@@ -110,15 +97,23 @@ levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
 #Only use trials that have a high and low, ie levels=2
 complete.trial<- Trials[levels.trial ==2]
 
-#Calculate selectivity
-compet<-lapply(complete.trial,selective)
-melt.compet<-melt(compet)
+#We want to compute for each trial, the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds.
 
-#Split time and date
-melt.compet<-data.frame(melt.compet,colsplit(melt.compet$L1,"\\.",c("Elev",'Date')))
+####Within trial metrics
 
-#Format table for selectivity across elevations
-selective.matrix<-as.data.frame(cast(melt.compet,Elev + Date + Species ~ variable))
+Tdata<-lapply(complete.trial,function(x){
+  a<-selective(x)
+  b<-bph(x)
+  d<-avgF(x)
+  dat.trials<-merge(merge(a,b),d)
+  Elevation=unique(x$Elevation)
+  Date=unique(x$Date)
+  Replicate=unique(x$Replicate)
+  out<-data.frame(dat.trials,Elevation,Date,Replicate)
+return(out)})
+
+selective.matrix<-rbind.fill(Tdata)
+
 selective.matrix$Time_High<-times(selective.matrix$Time_High)
 selective.matrix$Time_Low<-times(selective.matrix$Time_Low)
 selective.matrix$Total_Time<-selective.matrix$Time_High + selective.matrix$Time_Low
@@ -128,50 +123,23 @@ selective.matrix$Minutes_High<-minutes(selective.matrix$Time_High) + seconds(sel
 selective.matrix$Minutes_Low<-minutes(selective.matrix$Time_Low) + seconds(selective.matrix$Time_Low)/60
 selective.matrix$Minutes_Total<-selective.matrix$Minutes_Low+selective.matrix$Minutes_High
 
-#Rename column
-colnames(selective.matrix)[1]<-"Elevation"
-
 #Add month column
 selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%Y"),"%b")
 
-########################################
-#Plotting Selectivity across elevation
-########################################
+#Relationship among feeding metrics
 
-#get only species that have atleast 2min
-sumT<-aggregate(selective.matrix$Minutes_Total,list(selective.matrix$Species),sum)
-speciesSkip<-sumT[sumT$x < 2,]$Group.1
+#Visits per hour and visit duration
+ggplot(selective.matrix,aes(x=bph,seconds(avgF))) + geom_point() + stat_smooth(method="lm",se=FALSE)
 
-#unweighted
-p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1))
-p + ylim(0,1)
-ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
+#Selectivity and visits
+ggplot(selective.matrix,aes(x=bph,Selectivity)) + geom_point() + stat_smooth(method="lm",se=FALSE)
 
-#weighted
-p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=as.numeric(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
-p  + stat_smooth(method="glm",family="binomial") + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
-ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
+#Selectivity and duration
+ggplot(selective.matrix,aes(x=seconds(avgF),Selectivity)) + geom_point() + stat_smooth(method="lm",se=FALSE)
 
-# #weighted and time
-p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=as.numeric(Elevation),Selectivity,col=MonthA,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
-p
-p  + geom_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + stat_smooth()
-
-## Write selectivity tables to file
-write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
-
-##Split out by date?
-head(selective.matrix)
-
-#######################################
-#Selectivity, Phylogeny and Morphology
-#######################################
-
-#Selectivity Descriptors for each species
-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
-
+##########################
 #merge with morphology
-
+##########################
 #PCA of trait space
 
 # Hum Standardized variables, what to do about NA's?
@@ -203,6 +171,64 @@ ws<-sapply(split(selective.matrix,selective.matrix$Species),function(x){
 })
 
 selective.matrix<-merge(selective.matrix,data.frame(weighted.selectivity=ws),by.x="Species",by.y="row.names")
+
+#average metrics
+#Weighted average of selectivity
+ws<-sapply(split(selective.matrix,selective.matrix$Species),function(x){
+  weighted.mean(x$Selectivity,x$Total_Time)
+})
+
+#average metrics across species
+avgStat<-aggregate(selective.matrix[,c("avgF","bph")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
+colnames(avgStat)<-c("Species","avgF")
+
+#merge with weighted selectivity
+avgStat<-merge(ws,avgStat,by.x="row.names",by.y="Species")
+colnames(avgStat)<-c("Species","W.Selectivity","avgF","bph")
+rownames(avgStat)<-avgStat$Species
+
+pcaStat<-prcomp(avgStat[,-1],scale=TRUE)
+biplot(pcaStat)
+########################################
+#Plotting Selectivity across elevation
+########################################
+
+#get only species that have atleast 2min
+sumT<-aggregate(selective.matrix$Minutes_Total,list(selective.matrix$Species),sum)
+speciesSkip<-sumT[sumT$x < 2,]$Group.1
+
+#unweighted
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1))
+p + ylim(0,1)
+ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
+
+#unweighted with a threshold
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip & selective.matrix$Minutes_Total > 1, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",family="binomial",aes(group=1))
+p + ylim(0,1)
+ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
+
+#weighted
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip & selective.matrix$Minutes_Total > 1,],aes(x=as.numeric(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
+p  + stat_smooth(method="glm",family="binomial") + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
+ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
+
+# #weighted and time
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=as.numeric(Elevation),Selectivity,col=MonthA,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
+p
+p  + geom_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + stat_smooth()
+
+## Write selectivity tables to file
+write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
+
+##Split out by date?
+head(selective.matrix)
+
+#######################################
+#Selectivity, Phylogeny and Morphology
+#######################################
+
+#Selectivity Descriptors for each species
+ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
 #aggregate
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)

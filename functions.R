@@ -17,3 +17,20 @@ selective<-function(y){
   
   #return output
   return(selectivity)}
+
+#Birds per hour visit rate
+bph<-function(x){
+bird_hour<-table(droplevels(x$Species),hours(x$Time.Begin))
+p<-apply(bird_hour,1,mean)
+return(data.frame(Species=names(p),bph=p))}
+
+#average feeding time
+avgF<-function(x){
+  T<-aggregate(x$Time_Feeder_Obs,list(x$Species),mean,na.rm=TRUE)
+  colnames(T)<-c("Species","avgF")
+  T$avgF<-minutes(T$avgF)*60 + seconds(T$avgF)
+  return(T)
+}
+
+
+
