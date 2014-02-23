@@ -1,10 +1,6 @@
-#Ben Weinstein - Code and Project Design
-#Lisa Dittmar and Ben Weinstein reviewed the videos
 
-##Competition Feeder Experiments
-# A High value resource is placed alongside a low value resource
-#Our goal is measure selectivity of each species at each elevation
-
+#Step 1 - Set up data environment and load in data
+################################################################
 #load in packages
 require(ggplot2)
 require(chron)
@@ -28,9 +24,13 @@ dat$Sex<-toupper(dat$Sex)
 #Bring in Hummingbird Morphology Dataset, comes from
 hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
 
-############################
-#Data Cleaning and Sampling
-############################
+
+#####################################
+#Step 2 - Data Cleaning and Sampling
+#####################################
+
+#take out the unknown species
+dat<-dat[!dat$Species %in% "UKWN",]
 
 #Which dates need to be matched?
 vid_totals_date<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment,dat$Date,dat$Replicate),function(x) nlevels(droplevels(x)))
@@ -99,7 +99,7 @@ complete.trial<- Trials[levels.trial ==2]
 
 #We want to compute for each trial, the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds.
 
-####Within trial metrics
+####Within trial metrics per species
 
 Tdata<-lapply(complete.trial,function(x){
   a<-selective(x)
@@ -109,8 +109,13 @@ Tdata<-lapply(complete.trial,function(x){
   Elevation=unique(x$Elevation)
   Date=unique(x$Date)
   Replicate=unique(x$Replicate)
-  out<-data.frame(dat.trials,Elevation,Date,Replicate)
+  #Richness at that feeder
+  Trichness<-length(levels(droplevels(x$Species)))
+  #Total visits
+  Tvisits<-nrow(x)
+  out<-data.frame(dat.trials,Elevation,Date,Replicate,Richness=Trichness,Tvisits)
 return(out)})
+
 
 selective.matrix<-rbind.fill(Tdata)
 
@@ -126,16 +131,39 @@ selective.matrix$Minutes_Total<-selective.matrix$Minutes_Low+selective.matrix$Mi
 #Add month column
 selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%Y"),"%b")
 
-#Relationship among feeding metrics
+#I think i the weighted regression is weird, just take out data where the bird fed less than 
 
-#Visits per hour and visit duration
-ggplot(selective.matrix,aes(x=bph,seconds(avgF))) + geom_point() + stat_smooth(method="lm",se=FALSE)
+plot(ecdf(selective.matrix$Minutes_Total))
+##Descriptive stats complete
 
-#Selectivity and visits
-ggplot(selective.matrix,aes(x=bph,Selectivity)) + geom_point() + stat_smooth(method="lm",se=FALSE)
+###############Optimal Foraging
 
-#Selectivity and duration
-ggplot(selective.matrix,aes(x=seconds(avgF),Selectivity)) + geom_point() + stat_smooth(method="lm",se=FALSE)
+#Birds should prefer high value resources
+ggplot(selective.matrix,aes(x=Minutes_High,Minutes_Low)) + geom_point() + geom_abline()
+
+#Optimal foraging says that individuals should occupy patches at a rate equal to their quality
+sH<-sum(selective.matrix$Minutes_High)
+sL<-sum(selective.matrix$Minutes_Low)
+
+#Optimal foraging says its should be three
+sH/sL
+
+#Competition keeps birds from occupying higher quality patch
+
+#Effect of increasing richness on selectivity
+ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
+
+#Effects of increasing visits on selectivity
+ggplot(selective.matrix,aes(x=Tvisits,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
+
+
+
+#####################################
+#Correlations among data
+#####################################
+
+#pairs plot
+ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Elevation","Minutes_High","Minutes_Low","Minutes_Total","MonthA")])
 
 ##########################
 #merge with morphology
@@ -189,6 +217,7 @@ rownames(avgStat)<-avgStat$Species
 
 pcaStat<-prcomp(avgStat[,-1],scale=TRUE)
 biplot(pcaStat)
+
 ########################################
 #Plotting Selectivity across elevation
 ########################################
