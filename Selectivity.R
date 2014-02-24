@@ -1,19 +1,19 @@
-
 #Step 1 - Set up data environment and load in data
 ################################################################
+
 #load in packages
 require(ggplot2)
 require(chron)
 require(reshape)
 
 #set gitpath
-gitpath<-"C:/Users/Office653-1//Documents/GitHub/Selectivity/"
+gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/office653-1/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -23,7 +23,6 @@ dat$Sex<-toupper(dat$Sex)
 
 #Bring in Hummingbird Morphology Dataset, comes from
 hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
-
 
 #####################################
 #Step 2 - Data Cleaning and Sampling
@@ -145,9 +144,7 @@ hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
 #Take out birds feeding less than 1min over the 6hours
 selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
 
-
 ##Descriptive stats complete
-
 
 ###############Optimal Foraging
 
@@ -167,9 +164,7 @@ print(sH/sL)
 ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + scale_x_continuous(breaks=seq(0,9,1))
 
 #Effects of increasing visits on selectivity
-ggplot(selective.matrix,aes(x=Tvisits,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + scale
-
-
+ggplot(selective.matrix,aes(x=Tvisits,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
 
 #####################################
 #Correlations among data
@@ -213,12 +208,6 @@ ws<-sapply(split(selective.matrix,selective.matrix$Species),function(x){
 
 selective.matrix<-merge(selective.matrix,data.frame(weighted.selectivity=ws),by.x="Species",by.y="row.names")
 
-#average metrics
-#Weighted average of selectivity
-ws<-sapply(split(selective.matrix,selective.matrix$Species),function(x){
-  weighted.mean(x$Selectivity,x$Total_Time)
-})
-
 #average metrics across species
 avgStat<-aggregate(selective.matrix[,c("avgF","bph")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
 colnames(avgStat)<-c("Species","avgF")
@@ -240,13 +229,7 @@ sumT<-aggregate(selective.matrix$Minutes_Total,list(selective.matrix$Species),su
 speciesSkip<-sumT[sumT$x < 2,]$Group.1
 
 #unweighted
-p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1))
-p + ylim(0,1)
-ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
-
-#unweighted with a threshold
-p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip & selective.matrix$Minutes_Total > 1, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",family="binomial",aes(group=1))
-p + ylim(0,1)
+p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1),family="binomial")
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 #weighted
@@ -285,6 +268,31 @@ p
 p<-ggplot(selective.matrix,aes(x=PC2,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
 p
 
+#########################################################
+#Selectivity as function of distance to nearest range edge
+##########################################################
+
+#Bring in transect data, see Maquipucuna Repo
+transect<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia//Results//HummingbirdTransects//HumTransectRows.csv",sep=""),row.names=1)
+
+#just get summer transect data
+head(transect)
+
+levels(transect$Hummingbird.Species)[levels(transect$Hummingbird.Species) %in% c("violet-tailed Slyph","VIolet-tailed Slyph","Violet-tailed Slyph")]<-"Violet-tailed Sylph"
+
+transect<-transect[transect$Month %in% c(6,7,8),]
+dim(transect)
+
+#Range extent for each species
+ggplot(transect,aes(x=ele,fill=Hummingbird.Species)) + geom_histogram() + facet_wrap(~Hummingbird.Species)
+
+rangeLim<-aggregate(transect$ele,list(transect$Hummingbird.Species),range,na.rm=TRUE)
+
+rangeLim<-data.frame(rangeLim$Group.1,rangeLim$x)
+colnames(rangeLim)<-c("Species","Min","Max")
+
+ggplot(rangeLim,aes(x=Species,ymin=Min,ymax=Max)) + geom_linerange() + coord_flip()
+
 ##########################################
 #Selectivity as a function of body size
 ###################################
@@ -292,11 +300,9 @@ p
 p<-ggplot(selective.matrix,aes(x=Mass,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
 p
 
-
 ##########################################
 #Compare Selectivity to Available Resource, incomplete, needs to be adjusted to per day
 ##########################################
-
 #read in flower totals from FlowerTransects.R
 read.csv(paste(droppath,"FlowerTransects/FlowerTotals.csv"))
 
