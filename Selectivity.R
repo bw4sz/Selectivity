@@ -28,14 +28,14 @@ hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology
 #Step 2 - Data Cleaning and Sampling
 #####################################
 
-#take out the unknown species
-dat<-dat[!dat$Species %in% "UKWN",]
-
 #Which dates need to be matched?
 vid_totals_date<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment,dat$Date,dat$Replicate),function(x) nlevels(droplevels(x)))
 vid_totals_date<-cast(vid_totals_date,Group.1 + Group.3 + Group.4~Group.2)
 
 print(vid_totals_date)
+
+#take out the unknown species
+dat<-dat[!dat$Species %in% "UKWN",]
 
 #Species richness and identity at each elevation
 sp_matrixHL<-(table(dat$Species,dat$Elevation,dat$Treatment) >= 1) * 1
@@ -114,9 +114,9 @@ Tdata<-lapply(complete.trial,function(x){
   #Total visits
   Tvisits<-nrow(x)
   out<-data.frame(dat.trials,Elevation,Date,Replicate,Richness=Trichness,Tvisits)
-return(out)})
+  return(out)})
 
-
+#Bind dataset to a dataframe
 selective.matrix<-rbind.fill(Tdata)
 
 selective.matrix$Time_High<-times(selective.matrix$Time_High)
@@ -279,6 +279,8 @@ transect<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia//Results//Humm
 head(transect)
 
 levels(transect$Hummingbird.Species)[levels(transect$Hummingbird.Species) %in% c("violet-tailed Slyph","VIolet-tailed Slyph","Violet-tailed Slyph")]<-"Violet-tailed Sylph"
+levels(transect$Hummingbird.Species)[levels(transect$Hummingbird.Species) %in% c("Booted Racketail")]<-"Booted Racket-tail"
+
 
 transect<-transect[transect$Month %in% c(6,7,8),]
 dim(transect)
@@ -287,26 +289,109 @@ dim(transect)
 ggplot(transect,aes(x=ele,fill=Hummingbird.Species)) + geom_histogram() + facet_wrap(~Hummingbird.Species)
 
 rangeLim<-aggregate(transect$ele,list(transect$Hummingbird.Species),range,na.rm=TRUE)
-
 rangeLim<-data.frame(rangeLim$Group.1,rangeLim$x)
 colnames(rangeLim)<-c("Species","Min","Max")
 
 ggplot(rangeLim,aes(x=Species,ymin=Min,ymax=Max)) + geom_linerange() + coord_flip()
 
+#Distance to range edge for each datapoint
+head(dat)
+
+distU<-apply(selective.matrix,1,function(x){
+  
+  #If species doesn't exist in transect, skip
+  if(sum(rangeLim$Species %in% x["Species"])==0) {
+    r<-NA
+    names(r)<-NA
+    return(r)
+  }
+  
+  maxR<-abs(as.numeric(x["Elevation"]) - as.numeric(rangeLim[rangeLim$Species %in% x["Species"],]$Max))
+  minR<-abs(as.numeric(x["Elevation"]) - as.numeric(rangeLim[rangeLim$Species %in% x["Species"],]$Min))
+  
+  names(maxR)<-
+    names(minR)<-
+    
+    if(maxR > minR) {return(data.frame(UP="Dist_Upper",RDist=maxR))}
+  if(minR > maxR) {return(data.frame(UP="Dist_Lower",RDist=minR))}
+  
+})
+
+#append to dataset
+selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
+
+#Selectivity and distance to range edge.
+ggplot(selective.matrix,aes(RDist,Selectivity,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) 
+
 ##########################################
 #Selectivity as a function of body size
-###################################
+##########################################
 
-p<-ggplot(selective.matrix,aes(x=Mass,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
+p<-ggplot(selective.matrix,aes(x=Mass,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 p
 
 ##########################################
-#Compare Selectivity to Available Resource, incomplete, needs to be adjusted to per day
+#Selectivity as a function of difference in body size
 ##########################################
-#read in flower totals from FlowerTransects.R
-read.csv(paste(droppath,"FlowerTransects/FlowerTotals.csv"))
 
-#TH
+#Species list for each trial.
+
+sp.lists<-sapply(complete.trial,function(x){
+  levels(droplevels(x$Species))
+})
+
+#get body size lists for each trial
+
+mass.lists<-lapply(sp.lists,function(x){
+  hum.morph[hum.morph$English %in% x, "Mass"]
+})
+
+#For each row in the selectivity matrix, get the difference to the largest species
+
+#get the species with the max body size at the feeder during that trial
+x<-selective.matrix[1,]
+
+selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
+  
+  x<-selective.matrix[y,]
+  #find the index in the list
+  index<-paste(paste(x["Elevation"],x[["Date"]],sep="."),x[["Replicate"]],sep=".")
+  
+  mass_T<-mass.lists[names(mass.lists) %in% index]
+  
+  #mass of the species minus max
+  massD<-x[["Mass"]] - max(unlist(mass_T))
+  return(massD)})
+
+p<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+
+##########################################
+#Compare Selectivity to Available Resource
+##########################################
+
+#read in flower totals from FlowerTransects.R
+fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
+
+fl<-aggregate(fltransects$Total_Flowers,by=list(fltransects$month,fltransects$Elevation.Begin,fltransects$Elevation.End),sum,na.rm=TRUE)
+
+colnames(fl)<-c("Month","Elevation.Begin","Elevation.End","TotalFlowers")
+
+selective.matrix$Resources<-sapply(1:nrow(selective.matrix),function(y){
+  
+  #get row
+  x<-selective.matrix[y,]
+  
+  #What month
+  m<-as.numeric(months(as.character(x$Date)))
+  
+  #Total flowers at that elevation
+  out<-fl[(fl$Elevation.Begin %in% x$Elevation|fl$Elevation.End %in% x$Elevation) & fl$Month %in% m ,]
+  
+  #Average of the transects above and below
+  return(mean(out$TotalFlowers))
+  
+  })
+
 
 #Create a transect R column
 selective.matrix$Elev<-paste(selective.matrix$Elevation,(as.numeric(selective.matrix$Elevation) + 200),sep="_")
