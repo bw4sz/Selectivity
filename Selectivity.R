@@ -7,13 +7,13 @@ require(chron)
 require(reshape)
 
 #set gitpath
-gitpath<-"C:/Users/Ben/Documents/Selectivity/"
+gitpath<-"C:/Users/Office653-1//Documents/GitHub/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/office653-1/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -37,6 +37,7 @@ vid_totals_date<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment,dat$Date,d
 vid_totals_date<-cast(vid_totals_date,Group.1 + Group.3 + Group.4~Group.2)
 
 print(vid_totals_date)
+
 #Species richness and identity at each elevation
 sp_matrixHL<-(table(dat$Species,dat$Elevation,dat$Treatment) >= 1) * 1
 
@@ -134,7 +135,19 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 #I think i the weighted regression is weird, just take out data where the bird fed less than 
 
 plot(ecdf(selective.matrix$Minutes_Total))
+
+ecdf(selective.matrix$Minutes_Total) (.5)
+
+hist(selective.matrix$Minutes_Total,breaks=seq(0,40,.5))
+hist(selective.matrix$Minutes_High,breaks=seq(0,40,.5))
+hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
+
+#Take out birds feeding less than 1min over the 6hours
+selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
+
+
 ##Descriptive stats complete
+
 
 ###############Optimal Foraging
 
@@ -146,15 +159,15 @@ sH<-sum(selective.matrix$Minutes_High)
 sL<-sum(selective.matrix$Minutes_Low)
 
 #Optimal foraging says its should be three
-sH/sL
+print(sH/sL)
 
 #Competition keeps birds from occupying higher quality patch
 
 #Effect of increasing richness on selectivity
-ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
+ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + scale_x_continuous(breaks=seq(0,9,1))
 
 #Effects of increasing visits on selectivity
-ggplot(selective.matrix,aes(x=Tvisits,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
+ggplot(selective.matrix,aes(x=Tvisits,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + scale
 
 
 
