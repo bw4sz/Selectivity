@@ -365,9 +365,9 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
 
 p<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 
-##########################################
+#####################################################
 #Compare Selectivity to Available Resource
-##########################################
+#####################################################
 
 #read in flower totals from FlowerTransects.R
 fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
@@ -392,18 +392,8 @@ selective.matrix$Resources<-sapply(1:nrow(selective.matrix),function(y){
   
   })
 
-
-#Create a transect R column
-selective.matrix$Elev<-paste(selective.matrix$Elevation,(as.numeric(selective.matrix$Elevation) + 200),sep="_")
-
-#Create a month column
-selective.matrix$Elev
-
-#Merge
-selective.fl<-merge(fl.totals,selective.matrix)
-
-#For now, aggregate across months?
-ggplot(selective.fl,aes(x=as.numeric(TotalFlowers),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
+p<-ggplot(selective.matrix,aes(x=Resources,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+p + facet_wrap(~Species)
 
 #################################
 #Species Presence and Time
