@@ -1,3 +1,61 @@
+Interspecific competition among nectivorous assemblages: diverse of effects of abiotic, biotic, and mechanical predictors of behavioral dominance
+========================================================
+
+MS submitted in the 
+Ben G. Weinstein, corresponding author, email: bweinste@life.bio.sunsysb.edu
+
+Department of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA
+Catherine H. Graham, email: Catherine.Graham@stonybrook.edu
+
+Department of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA
+Contributions: BW, CG developed the conceptual ideas for the MS; BW collected data, BW conducted the analyses; CG and BW wrote the MS
+
+********
+
+Introduction
+-------------
+
+Competition between species may limit local diversity by excluding competitors with similar niche requirements. In addition, it may promote regional diversity, where checkerboard patterns of ecological similar species replace each other across a microclimatic gradient (gottelli and graves). Competition for resources can result in direct interference encounters between species, or exploitation of a common and limited resource. Fundamental tenets of community ecology suggest that closely related, morphologically similar, and aggressive species should compete vigorously for local resources. Where species compete for limited resources species adapted to similar niche requirements will cause local extinctions in subordinate competitors. However, differences in behavior, foraging strategies, and micro-scale distribution allows co-occurrence through fine scale niche diversification
+
+Optimal foraging theory posits that species should feed on most profitable resource available, where an organism evaluates the time needed to extract the resource, versus the value of the resource. Unequal competitive ability among species will lead to reduced visitation to high value patches through interspecific competition. We contrast, abiotic, and biotic predictors of competition through behavioral dominance. Decreased access to high value resources may lead to negative fitness consequences, given the extreme metabolic pressures of hummingbird flight. We offer three, non-exclusive hypothesis, 1) Species should be most selective at the center of their range. Following the abundance center hypothesis, we expect the highest quality territory at the center of species elevation range. Individuals in non-suitable habitat, or weakly suitable habitat, may be inferior competitions due to mal-adaptation to the environment. 2) Species should be most selective when they are the largest (most massive) bird in the competitive community, 3) Species should be most selective when there are many available resources at that elevation.
+
+Hummingbirds are highly specialized nectivorous feeders with adapted morphologies for extracting nectar from hummingbird pollinated flowers. Differences in foraging strategies have important ramifications for species metabolic rate, resource acquisition and mortality (cite). Hummingbird foraging ecology has been extensively studied (Camfield, 2006; P. A. Cotton, 1983; P. a. Cotton, 2006; Feinsinger & Colwell, 1978; González-Gómez, Vásquez, & Bozinovic, 2011; D. R. Powers & Conley, 1994; D. Powers, 1987), and hummingbirds are often partitioned into different syndromes based on their resource use, interspecific aggression and morphology. Feinsinger (1978) partitioned hummingbirds into six ecological roles: marauder, high-reward trapliner, filcher, generalist, territorialist, low-reward trapliner. While these categories are not absolute, and may change over time and space (Feinsinger & Colwell, 1978), they provide an overview for the spectrum of behaviors and associated morphologies, which can be used to categorize hummingbirds in an assemblage. Using these ecological roles, early studies evaluated eco-morphological connections between specific biomechanical flight measures (wing-disc loading, body mass, thrust) and interspecific dominance. For example, wing-disc loading (WDL) is the ratio of mass to wing span, and is a measure of hummingbird agility and thrust (but see Altshuler et al., 2002). Feinsinger and Colwell (1978) predicted that territorial individuals will have high WDL values, which gave them an advantage in flight performance. However, recent work has reexamined the relationship between wing-disc loading and territoriality, and did not support the earlier finding when incorporating phylogenetic interdependence (D. L. Altshuler, 2004). While it is clear that ecological roles are related to morphology (Figure 3), this relationship needs to refined and experimentally tested, especially in a phylogenetic context.
+
+******
+Methods
+=========
+Study Site
+-----------
+Data was collected at the Maquipicuna Research Station and Santa Lucia Ecolodge (0.11838,-78.61205) between June and August 2013 along an elevation gradient of 1300-2600m. This elevation contains of regenerating secondary and primary cloud-forest, an ecotype dominated by cool year round temperatures, and pronounced  precipitation seasonality, with a warmer dry season (June-Sep) and a cooler rainy season (Jan – May) (Webster and Rhodes 2001). 
+Selectivity Experiments
+Every 200m of elevation, we placed a feeder with a high value resource (1.2M sucrose), and a low value resource (0.30M sucrose). Feeders were filled and opened for 3 days before filming. The feeders were cleaned, and the nectar was replenished every other day. For each species, selectivity will be measured by dividing the time spent feeding on the high value resource by the total feeding time (D. L. Altshuler, 2004; Pimm, Rosenzweig, & Mitchell, 1985; Sandlin, 2000). We removed selectivity events from very rare visitors to feeders ( > than 1min feeding from 6 hour) 
+
+Time-lapse Cameras
+--------------------
+We used a novel monitoring technique using time lapse video cameras.  Time lapse cameras (Plotwatcher PRO – Day 6) recorded an image every second, beginning at 6am – 12pm, and 12:30pm to 6pm. Cameras were set at each feeder for a minimum of four days. Comparative analysis with high definition cameras, as well as observer counts showed high fidelity and accuracy in bird identification and timing. Frames were given unique IDs based on date and elevation and stored on terabyte hard-drives until review. Utilizing computer vision libraries in python, we developed motion sensing algorithms to return frames with motion from background frames (OpenCV2 see Appendix A).  Comparative tests with an observer watching an entire video showed no difference between occurrence and species identification. Our pipeline returned the top 10% motion frames within the video, which were then scored by the author and assistant. We recorded all visits to a feeder where we visually could recover the bird actively feeding and noted the duration of feeding, rounded to the nearest 1 second.
+
+Morphological Data
+-------------------
+For trait information, we used measurements of six traits in adult males: body mass, closed wing-length (i.e., wing chord), and length of exposed culmen, tarsus length, nail length, and wing loading (Graham et al. 2012, Appendix B). We choose these traits from a larger 17 trait datasat because they have a stronger biological basis, and are not highly correlated (Appendix B). Body mass is related to thermoregulatory adaptations to high elevation habitats, as well as aggressive interactions among territorial species (Altshuler and Dudley 2002, González-Gómez et al. 2011). Wing chord is a component of hovering flight, which becomes more difficult at high elevation due to lower air density (Feinsinger and Chaplin 1975). Bill length is associated with resource use through matching between bill lengths and corolla lengths in hummingbird pollinated plants (Temeles et al. 2002). We used principle components analysis on the standardized trait matrix to determine the axis of most variation among species in our assemblage. 
+
+Resource Availability and Use
+-----------------------------
+To measure available resources we counted the number of hummingbird pollinated plants along six 1km transects along the elevation gradient. Each transect was placed to cover ~200m of elevation change along trails in primary and selectively logged forest. Hummingbird flowering plants were identified by direct observation or by using the well-established morphological syndromes following Backer (1973). For each plant, we estimated the number of total flowers by taking the average flowers on 3-5 stalks, and multiplying by the total number of stalks on a plant. Surveys were repeated twice a month. Flowers were identified using the extensive plant list established for the site, as well as consulting with a number of taxonomic experts (see acknowledgements). Surveys were repeated X times for each elevations over three months.
+
+Hummingbirds Occurrence
+--------------------------
+To avoid circularity with the selectivity at the feeders, we estimated hummingbird range distribution from independent line transects along the elevation gradient. Observers walked at a slow and consistent pace along the 1km flower transects, only stopping to identify hummingbird species. Where hummingbirds were seen feeding on flowers, we noted the plant species, height and behavior (feeding, defending, piercing, etc.) The maximum and minimum elevation for each hummingbird species were used as the range limits along the elevation gradient. 
+
+**********
+
+```{r, echo=FALSE}
+#set global opts
+opts_chunk$set(message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE)
+```
+
+**What does the data look like?**
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE,results='asis'}
 ################################################################
 #Step 1 - Set up data environment and load in data
 ################################################################
@@ -25,6 +83,17 @@ dat$Sex<-toupper(dat$Sex)
 #Bring in Hummingbird Morphology Dataset, comes from
 hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
 
+dat<-dat[,1:12]
+print(xtable(head(dat)),type="html")
+```
+
+There are 'r nrows(dat)'rows in the dataset.
+
+**Descriptive Statistics**
+===================
+
+How many videos have we reviewed for each date and elevation?
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE,results='asis'}
 #####################################
 #Step 2 - Data Cleaning and Sampling
 #####################################
@@ -33,8 +102,16 @@ hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology
 vid_totals_date<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment,dat$Date,dat$Replicate),function(x) nlevels(droplevels(x)))
 vid_totals_date<-cast(vid_totals_date,Group.1 + Group.3 + Group.4~Group.2)
 
-print(vid_totals_date)
+colnames(vid_totals_date)<-c("Elevation","Date","Replicate(O_R)","High Feeder","Low Feeder")
+require(xtable)
+print(xtable(vid_totals_date),type="html")
+```
+Table 1. Number of days of video analyzed for each elevation. For each elevation two sets of high and low value feeders were placed (O or R). The number of videos for each feeder that have been scored for hummingbird selectivity are shown for both the high and low value feeders. 
 
+
+Figure 1. Elevation range for all species at the feeders
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
 #take out the unknown species
 dat<-dat[!dat$Species %in% "UKWN",]
 
@@ -52,11 +129,11 @@ m.sp_m[m.sp_m$Presence==0,"Presence"]<-NA
 p<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile() + theme_bw() + scale_fill_discrete(na.value="white")
 p + labs(fill="Present",x="Elevation")
 ggsave(paste(gitpath,"Figures/RangeExtentFeeders.svg",sep=""),dpi=300,height=8,width=11)
+```
 
-####################
-#Time on the feeders
-####################
+Figure 2. Total minutes on feeders for each species.
 
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
 #Create time columns
 dat$Time.End<-times(dat$Time.End)
 dat$Time.Begin<-times(dat$Time.Begin)
@@ -65,21 +142,29 @@ dat$Time.Begin<-times(dat$Time.Begin)
 dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 
 #Get any rownumbers that are negative, these need to be fixed. 
-dat[which(dat$Time_Feeder_Obs < 0),]
+#dat[which(dat$Time_Feeder_Obs < 0),]
 
 #Total Time per species
 Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),sum,na.rm=TRUE) 
 colnames(Total_Time_Species)<-c("Species","TotalTime")
 Total_Time_Species$Time<-minutes(Total_Time_Species$TotalTime)+seconds(Total_Time_Species$TotalTime)/60
-ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
+ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+```
+
+Figure 3. Average duration of feeding event for each species
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
 #mean time feeding bout
 Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
 colnames(Mean_Time_Species)<-c("Species","Mean_Time")
-ggplot(Mean_Time_Species,aes(Species,Mean_Time)) + geom_bar() + theme(axis.text.x=element_text(angle=-90))
+ggplot(Mean_Time_Species,aes(Species,seconds(Mean_Time))) + geom_bar()  + theme_bw() + theme(axis.text.x=element_text(angle=-90)) + ylab("Average Seconds Feeding")
+```
 
-#Average time feeding for all species, and each species
-ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()
+Figure 4. Average time feeding for all species
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
+ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw()
 ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
 
 #average visits per hour
@@ -100,9 +185,11 @@ levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
 
 #Only use trials that have a high and low, ie levels=2
 complete.trial<- Trials[levels.trial ==2]
+```
 
-#We want to compute for each trial, the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds.
+*Compute for each trial, the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds.*
 
+```{r,message=FALSE,warning=FALSE,cache=TRUE,results='asis',echo=FALSE}
 ####Within trial metrics per species
 
 Tdata<-lapply(complete.trial,function(x){
@@ -137,21 +224,26 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 
 #I think i the weighted regression is weird, just take out data where the bird fed less than 
 
-plot(ecdf(selective.matrix$Minutes_Total))
-
-ecdf(selective.matrix$Minutes_Total) (1)
-
-hist(selective.matrix$Minutes_Total,breaks=seq(0,40,.5))
-hist(selective.matrix$Minutes_High,breaks=seq(0,40,.5))
-hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
+# plot(ecdf(selective.matrix$Minutes_Total))
+# 
+# ecdf(selective.matrix$Minutes_Total) (1)
+# 
+# hist(selective.matrix$Minutes_Total,breaks=seq(0,40,.5))
+# hist(selective.matrix$Minutes_High,breaks=seq(0,40,.5))
+# hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
 
 #Take out birds feeding less than 1min over the 6hours
 selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
+print(xtable(head(selective.matrix)),type="html")
 
-##Descriptive stats complete
+```
 
-###############Optimal Foraging###########
+***********
 
+Optimal Foraging
+===========
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
 #Birds should prefer high value resources
 ggplot(selective.matrix,aes(x=Minutes_High,Minutes_Low)) + geom_point() + geom_abline()
 
@@ -172,11 +264,13 @@ ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smo
 
 #Effects of increasing visits on selectivity
 ggplot(selective.matrix,aes(x=Tvisits,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
+```
 
-#####################################
+
 #Correlations among data
-#####################################
+------------------------
 
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
 #pairs plot
 ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Elevation","Minutes_High","Minutes_Low","Minutes_Total","MonthA")])
 
@@ -226,11 +320,14 @@ rownames(avgStat)<-avgStat$Species
 
 pcaStat<-prcomp(avgStat[,-1],scale=TRUE)
 biplot(pcaStat)
+```
 
-########################################
-#Plotting Selectivity across elevation
-########################################
 
+Hypothesis 1:
+------------
+Species should be most selective at the center of their range. Following the abundance center hypothesis, we expect the highest quality territory at the center of species elevation range. Individuals in non-suitable habitat, or weakly suitable habitat, may be inferior competitions due to mal-adaptation to the environment.
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
 #get only species that have atleast 2min
 sumT<-aggregate(selective.matrix$Minutes_Total,list(selective.matrix$Species),sum)
 speciesSkip<-sumT[sumT$x < 2,]$Group.1
@@ -244,17 +341,16 @@ p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip & selectiv
 p  + stat_smooth(method="glm",family="binomial") + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
-# #weighted and time
-p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=as.numeric(Elevation),Selectivity,col=MonthA,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
-p
-p  + geom_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + stat_smooth()
+# # #weighted and time
+# p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip,],aes(x=as.numeric(Elevation),Selectivity,col=MonthA,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
+# p
+# p  + geom_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + stat_smooth()
 
 ## Write selectivity tables to file
 write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
+```
 
-##Split out by date?
-head(selective.matrix)
-
+```{r,message=FALSE,warning=FALSE,cache=TRUE}
 #######################################
 #Selectivity, Phylogeny and Morphology
 #######################################
@@ -417,3 +513,5 @@ ggsave("Thesis//Maquipucuna_SantaLucia/Results/TimeofDayElevation.svg",height=11
 #Overall Month_Day and Elevation
 ggplot(dat,aes(y=factor(Elevation),x=dat$Time_Stamp,col=Species)) + geom_point(size=3) + scale_x_datetime() + facet_wrap(~Species)
 ggsave("Thesis//Maquipucuna_SantaLucia/Results/DateElevation.svg",height=11,width=8,dpi=300)
+
+```
