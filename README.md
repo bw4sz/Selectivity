@@ -1,7 +1,6 @@
-Selectivity
+Interspecific competition among nectivorous assemblages: diverse of effects of abiotic, biotic, and mechanical predictors of behavioral dominance
 ===========
 
-Hummingbird Behavioral Dominance at Maquipucuna and Santa Lucia Ecuador
 
 *Ben Weinstein* - Code and Project Design
 
