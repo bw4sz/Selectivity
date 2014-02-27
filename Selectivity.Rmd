@@ -1,7 +1,7 @@
-Interspecific competition among nectivorous assemblages: diverse of effects of abiotic, biotic, and mechanical predictors of behavioral dominance
+Automated monitoring reveals diverse effects of abiotic and biotic factors on behavioral dominance in Andean Hummingbirds
 ========================================================
 
-MS submitted in the 
+MS prepared for Behavioral Ecology
 Ben G. Weinstein, corresponding author, email: bweinste@life.bio.sunsysb.edu
 
 Department of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA
@@ -66,13 +66,13 @@ require(chron)
 require(reshape)
 
 #set gitpath
-gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+gitpath<-"C:/Users/Ben/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
+droppath<-"C:/Users/Ben/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -84,15 +84,17 @@ dat$Sex<-toupper(dat$Sex)
 hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
 
 dat<-dat[,1:12]
+require(xtable)
 print(xtable(head(dat)),type="html")
 ```
 
-There are 'r nrows(dat)'rows in the dataset.
+There are 'r nrow(dat)'rows in the dataset.
 
-**Descriptive Statistics**
+**Results**
 ===================
 
 How many videos have we reviewed for each date and elevation?
+
 ```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE,results='asis'}
 #####################################
 #Step 2 - Data Cleaning and Sampling
@@ -109,31 +111,10 @@ print(xtable(vid_totals_date),type="html")
 Table 1. Number of days of video analyzed for each elevation. For each elevation two sets of high and low value feeders were placed (O or R). The number of videos for each feeder that have been scored for hummingbird selectivity are shown for both the high and low value feeders. 
 
 
-Figure 1. Elevation range for all species at the feeders
+```{r}
 
-```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
-#take out the unknown species
 dat<-dat[!dat$Species %in% "UKWN",]
 
-#Species richness and identity at each elevation
-sp_matrixHL<-(table(dat$Species,dat$Elevation,dat$Treatment) >= 1) * 1
-
-#View species at each elevation and treatment
-m.sp_m<-melt(sp_matrixHL)
-colnames(m.sp_m)<-c("Species","Elevation","Treatment","Presence")
-
-#turn 0's to NA's just for plotting
-m.sp_m[m.sp_m$Presence==0,"Presence"]<-NA
-
-#richness across feeders
-p<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile() + theme_bw() + scale_fill_discrete(na.value="white")
-p + labs(fill="Present",x="Elevation")
-ggsave(paste(gitpath,"Figures/RangeExtentFeeders.svg",sep=""),dpi=300,height=8,width=11)
-```
-
-Figure 2. Total minutes on feeders for each species.
-
-```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
 #Create time columns
 dat$Time.End<-times(dat$Time.End)
 dat$Time.Begin<-times(dat$Time.Begin)
@@ -143,30 +124,10 @@ dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 
 #Get any rownumbers that are negative, these need to be fixed. 
 #dat[which(dat$Time_Feeder_Obs < 0),]
-
-#Total Time per species
-Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),sum,na.rm=TRUE) 
-colnames(Total_Time_Species)<-c("Species","TotalTime")
-Total_Time_Species$Time<-minutes(Total_Time_Species$TotalTime)+seconds(Total_Time_Species$TotalTime)/60
-
-ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 ```
 
-Figure 3. Average duration of feeding event for each species
 
 ```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
-#mean time feeding bout
-Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
-colnames(Mean_Time_Species)<-c("Species","Mean_Time")
-ggplot(Mean_Time_Species,aes(Species,seconds(Mean_Time))) + geom_bar()  + theme_bw() + theme(axis.text.x=element_text(angle=-90)) + ylab("Average Seconds Feeding")
-```
-
-Figure 4. Average time feeding for all species
-
-```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
-ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw()
-ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
-
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
 
@@ -177,7 +138,6 @@ S_H<-table(hours(dat$Time.Begin),dat$Species)
 Trials<-split(dat, list(dat$Elevation,dat$Date,dat$Replicate),drop=TRUE)
 
 #How many hours of video
-sum(sapply(Trials,function(x) nlevels(factor(hours(x$Time.Begin)))))
 
 #####Just for data clarity remove any trials that down have high and low value data entered
 #Get number of levels per trial
@@ -187,7 +147,7 @@ levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
 complete.trial<- Trials[levels.trial ==2]
 ```
 
-*Compute for each trial, the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds.*
+We analyzed 'r sum(sapply(Trials,function(x) nlevels(factor(hours(x$Time.Begin)))))' hours of video through our computer vision pipeline. For each trial the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds (Appendix A)
 
 ```{r,message=FALSE,warning=FALSE,cache=TRUE,results='asis',echo=FALSE}
 ####Within trial metrics per species
@@ -495,9 +455,9 @@ p<-ggplot(selective.matrix,aes(x=Resources,y=Selectivity,size=Minutes_Total,labe
 p + facet_wrap(~Species)
 
 
-############Quick look at temperature and elevation
-require(scales)
-ggplot(dat,aes(x=chron(Time.Begin),y=Temp,col=factor(Elevation))) + geom_smooth(se=FALSE) + scale_x_chron(format="%H")
+# ############Quick look at temperature and elevation
+# require(scales)
+# ggplot(dat,aes(x=chron(Time.Begin),y=Temp,col=factor(Elevation))) + geom_smooth(se=FALSE) + scale_x_chron(format="%H")
 
 #################################
 #Species Presence and Time
@@ -514,4 +474,56 @@ ggsave("Thesis//Maquipucuna_SantaLucia/Results/TimeofDayElevation.svg",height=11
 ggplot(dat,aes(y=factor(Elevation),x=dat$Time_Stamp,col=Species)) + geom_point(size=3) + scale_x_datetime() + facet_wrap(~Species)
 ggsave("Thesis//Maquipucuna_SantaLucia/Results/DateElevation.svg",height=11,width=8,dpi=300)
 
+```
+
+Supplamentary Figures
+=====================
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
+
+#Species richness and identity at each elevation
+sp_matrixHL<-(table(dat$Species,dat$Elevation,dat$Treatment) >= 1) * 1
+
+#View species at each elevation and treatment
+m.sp_m<-melt(sp_matrixHL)
+colnames(m.sp_m)<-c("Species","Elevation","Treatment","Presence")
+
+#turn 0's to NA's just for plotting
+m.sp_m[m.sp_m$Presence==0,"Presence"]<-NA
+
+#richness across feeders
+p<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile() + theme_bw() + scale_fill_discrete(na.value="white")
+p + labs(fill="Present",x="Elevation")
+ggsave(paste(gitpath,"Figures/RangeExtentFeeders.svg",sep=""),dpi=300,height=8,width=11)
+```
+
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
+#Total Time per species
+Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),sum,na.rm=TRUE) 
+colnames(Total_Time_Species)<-c("Species","TotalTime")
+Total_Time_Species$Time<-minutes(Total_Time_Species$TotalTime)+seconds(Total_Time_Species$TotalTime)/60
+
+ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+```
+
+Figure 3. Average duration of feeding event for each species
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE}
+#mean time feeding bout
+Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
+colnames(Mean_Time_Species)<-c("Species","Mean_Time")
+ggplot(Mean_Time_Species,aes(Species,seconds(Mean_Time))) + geom_bar()  + theme_bw() + theme(axis.text.x=element_text(angle=-90)) + ylab("Average Seconds Feeding")
+
+ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw()
+ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
+
+```
+
+Appendix A
+============
+Selective matrix for all trials and species.
+
+```{r,results='asis'}
+print(xtable(selective.matrix),type="html")
 ```
