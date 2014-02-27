@@ -153,10 +153,13 @@ sH/sL
 #Effect of increasing richness on selectivity
 ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
 
+#model
+RS_mod<-glm(data=selective.matrix,Selectivity~Richness,family="binomial",weights=selective.matrix$Minutes_Total)
+summary(RS_mod)
+
 #Effects of increasing visits on selectivity
 ggplot(selective.matrix,aes(x=Tvisits,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
-
-
+VS_mod<-glm(data=selective.matrix,Selectivity~Tvisits,family="binomial",weights=selective.matrix$Minutes_Total)
 
 #####################################
 #Correlations among data
