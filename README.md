@@ -1,4 +1,4 @@
-Interspecific competition among nectivorous assemblages: diverse of effects of abiotic, biotic, and mechanical predictors of behavioral dominance
+Automated monitoring reveals diverse effects of abiotic and biotic factors on behavioral dominance in Andean Hummingbirds
 ===========
 
 

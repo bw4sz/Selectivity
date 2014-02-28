@@ -61,14 +61,63 @@ To avoid circularity with the selectivity at the feeders, we estimated hummingbi
 
 
 
+<<<<<<< HEAD
+=======
+**What does the data look like?**
+
+<!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
+<!-- Thu Feb 27 14:49:08 2014 -->
+<TABLE border=1>
+<TR> <TH>  </TH> <TH> Video </TH> <TH> Date </TH> <TH> Replicate </TH> <TH> Elevation </TH> <TH> Treatment </TH> <TH> Species </TH> <TH> Sex </TH> <TH> Time.Begin </TH> <TH> Time.End </TH> <TH> Comment </TH> <TH> Temp </TH> <TH> Perching </TH>  </TR>
+  <TR> <TD align="right"> 1 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> White-whiskered Hermit </TD> <TD>  </TD> <TD> 14:13:41 </TD> <TD> 14:13:42 </TD> <TD>  </TD> <TD align="right">  68 </TD> <TD>  </TD> </TR>
+  <TR> <TD align="right"> 2 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> White-whiskered Hermit </TD> <TD>  </TD> <TD> 14:13:52 </TD> <TD> 14:14:05 </TD> <TD>  </TD> <TD align="right">  67 </TD> <TD>  </TD> </TR>
+  <TR> <TD align="right"> 3 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> White-whiskered Hermit </TD> <TD>  </TD> <TD> 14:15:16 </TD> <TD> 14:15:17 </TD> <TD>  </TD> <TD align="right">  68 </TD> <TD>  </TD> </TR>
+  <TR> <TD align="right"> 4 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> Tawny-bellied Hermit </TD> <TD>  </TD> <TD> 14:17:09 </TD> <TD> 14:17:12 </TD> <TD>  </TD> <TD align="right">  68 </TD> <TD>  </TD> </TR>
+  <TR> <TD align="right"> 5 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> White-whiskered Hermit </TD> <TD>  </TD> <TD> 14:21:31 </TD> <TD> 14:22:00 </TD> <TD>  </TD> <TD align="right">  68 </TD> <TD>  </TD> </TR>
+  <TR> <TD align="right"> 6 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> White-whiskered Hermit </TD> <TD>  </TD> <TD> 14:27:54 </TD> <TD> 14:27:55 </TD> <TD>  </TD> <TD align="right">  68 </TD> <TD>  </TD> </TR>
+   </TABLE>
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 
 
 
+<<<<<<< HEAD
 
 From June 2013 - August 2013 we measured hummingbird feeding behavior along at 1500m elevation gradient. We reviewed 2199 days of video for high and low value feeders, totaling approximately 1.3194 &times; 10<sup>4</sup> hours of automated review and subsequent scoring by a human observer. For the feeders, we were able to ID over 99% of interactions, with the only difficulty distinguishing among very similiar juveniles (Green-crowned Brilliant versus Empress Brilliant). Our computer vision software process 6 hours of video in approximately 25 minutes on a Intel Core XXX CPU with XXX Ghz and 8 GB internal RAM.
 
 
 
+=======
+<!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
+<!-- Thu Feb 27 14:49:08 2014 -->
+<TABLE border=1>
+<TR> <TH>  </TH> <TH> Elevation </TH> <TH> Date </TH> <TH> Replicate(O_R) </TH> <TH> High Feeder </TH> <TH> Low Feeder </TH>  </TR>
+  <TR> <TD align="right"> 1 </TD> <TD align="right"> 1300 </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 2 </TD> <TD align="right"> 1300 </TD> <TD> 6/11/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 3 </TD> <TD align="right"> 1300 </TD> <TD> 6/12/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   3 </TD> </TR>
+  <TR> <TD align="right"> 4 </TD> <TD align="right"> 1300 </TD> <TD> 6/13/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 5 </TD> <TD align="right"> 1300 </TD> <TD> 7/14/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 6 </TD> <TD align="right"> 1500 </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 7 </TD> <TD align="right"> 1500 </TD> <TD> 6/12/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 8 </TD> <TD align="right"> 1500 </TD> <TD> 7/14/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 9 </TD> <TD align="right"> 1700 </TD> <TD> 6/11/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 10 </TD> <TD align="right"> 1700 </TD> <TD> 6/12/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 11 </TD> <TD align="right"> 1700 </TD> <TD> 7/16/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 12 </TD> <TD align="right"> 1700 </TD> <TD> 7/18/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 13 </TD> <TD align="right"> 1900 </TD> <TD> 6/26/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 14 </TD> <TD align="right"> 1900 </TD> <TD> 7/1/2013 </TD> <TD> R </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 15 </TD> <TD align="right"> 1900 </TD> <TD> 7/2/2013 </TD> <TD> R </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 16 </TD> <TD align="right"> 1900 </TD> <TD> 8/10/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 17 </TD> <TD align="right"> 2100 </TD> <TD> 7/1/2013 </TD> <TD> O </TD> <TD align="right">   3 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 18 </TD> <TD align="right"> 2100 </TD> <TD> 8/6/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 19 </TD> <TD align="right"> 2100 </TD> <TD> 8/8/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 20 </TD> <TD align="right"> 2300 </TD> <TD> 6/27/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 21 </TD> <TD align="right"> 2300 </TD> <TD> 6/29/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 22 </TD> <TD align="right"> 2300 </TD> <TD> 8/10/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 23 </TD> <TD align="right"> 2300 </TD> <TD> 8/6/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 24 </TD> <TD align="right"> 2500 </TD> <TD> 6/27/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 25 </TD> <TD align="right"> 2500 </TD> <TD> 6/29/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+   </TABLE>
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 
 
 
@@ -81,8 +130,13 @@ From June 2013 - August 2013 we measured hummingbird feeding behavior along at 1
 
 We analyzed 'r sum(sapply(Trials,function(x) nlevels(factor(hours(x$Time.Begin)))))' hours of video through our computer vision pipeline. For each trial the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds (Appendix A)
 
+<<<<<<< HEAD
 <!-- html table generated in R 3.0.2 by xtable 1.7-1 package -->
 <!-- Fri Feb 28 10:52:38 2014 -->
+=======
+<!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
+<!-- Thu Feb 27 14:49:09 2014 -->
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 <TABLE border=1>
 <TR> <TH>  </TH> <TH> Species </TH> <TH> Time_High </TH> <TH> Time_Low </TH> <TH> Selectivity </TH> <TH> bph </TH> <TH> avgF </TH> <TH> Elevation </TH> <TH> Date </TH> <TH> Replicate </TH> <TH> Richness </TH> <TH> Tvisits </TH> <TH> Total_Time </TH> <TH> Minutes_High </TH> <TH> Minutes_Low </TH> <TH> Minutes_Total </TH> <TH> MonthA </TH>  </TR>
   <TR> <TD align="right"> 1 </TD> <TD> Tawny-bellied Hermit </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.83 </TD> <TD align="right"> 7.50 </TD> <TD align="right"> 9.00 </TD> <TD align="right"> 1300 </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">  67 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 3.40 </TD> <TD align="right"> 0.72 </TD> <TD align="right"> 4.12 </TD> <TD> Jun </TD> </TR>
@@ -99,25 +153,23 @@ We analyzed 'r sum(sapply(Trials,function(x) nlevels(factor(hours(x$Time.Begin))
 Optimal Foraging
 ===========
 
+<<<<<<< HEAD
 
 ```
 ## [1] 1.791
 ```
 
+=======
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-71.png) ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-72.png) ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-73.png) 
 
 
+Optimal theory posits that species should feed three times as much on the high value then the low value. However, we see that overall, species feed  times more on the low value resource. 
 
 #Correlations among data
 ------------------------
 
-
-```
-## Error: could not find function "ggpairs"
-```
-
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-81.png) ![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-82.png) 
-
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-81.png) ![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-82.png) ![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-83.png) 
 
 
 Hypothesis 1:
@@ -127,7 +179,7 @@ Species should be most selective at the center of their range. Following the abu
 ![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
 
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-101.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-102.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-103.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-104.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-105.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-106.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-101.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-102.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-103.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-104.png) 
 
 ```
 ##   GPS.ID ID     Hummingbird.Species     Date_F Month Transect_R
@@ -150,7 +202,7 @@ Species should be most selective at the center of their range. Following the abu
 ## [1] 305  10
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-107.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-108.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-105.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-106.png) 
 
 ```
 ##      Video      Date Replicate Elevation Treatment                Species
@@ -169,13 +221,13 @@ Species should be most selective at the center of their range. Following the abu
 ## 6       14:27:54 14:27:55           68                 00:00:01
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-109.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-1010.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-1011.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-1012.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-107.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-108.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-109.png) ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-1010.png) 
 
 ```
 ## Error: cairo error 'error while writing to output stream'
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-1013.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-1011.png) 
 
 ```
 ## Error: cairo error 'error while writing to output stream'
@@ -238,8 +290,13 @@ Table 1. Number of days of video analyzed for each elevation. For each elevation
 
 Selective matrix for all trials and species.
 
+<<<<<<< HEAD
 <!-- html table generated in R 3.0.2 by xtable 1.7-1 package -->
 <!-- Fri Feb 28 11:03:50 2014 -->
+=======
+<!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
+<!-- Thu Feb 27 14:49:35 2014 -->
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 <TABLE border=1>
 <TR> <TH>  </TH> <TH> Species </TH> <TH> Time_High </TH> <TH> Time_Low </TH> <TH> Selectivity </TH> <TH> bph </TH> <TH> avgF </TH> <TH> Elevation </TH> <TH> Date </TH> <TH> Replicate </TH> <TH> Richness </TH> <TH> Tvisits </TH> <TH> Total_Time </TH> <TH> Minutes_High </TH> <TH> Minutes_Low </TH> <TH> Minutes_Total </TH> <TH> MonthA </TH> <TH> Row.names </TH> <TH> MorphID </TH> <TH> SpID </TH> <TH> Sex </TH> <TH> N </TH> <TH> Bill </TH> <TH> Mass </TH> <TH> Bill_width </TH> <TH> Total_Culmen </TH> <TH> WingChord </TH> <TH> Bill_Depth </TH> <TH> Wing_Width </TH> <TH> Wing_Length </TH> <TH> Aspect_Ratio </TH> <TH> Wing_Area </TH> <TH> Wing_Loading </TH> <TH> Wing_Taper </TH> <TH> Wing_Area.alArea. </TH> <TH> Tail_Length </TH> <TH> Foot_Extension </TH> <TH> Tarsus_Length </TH> <TH> Nail_Length </TH> <TH> Clade </TH> <TH> Genus </TH> <TH> double </TH> <TH> PC1 </TH> <TH> PC2 </TH> <TH> weighted.selectivity </TH> <TH> UP </TH> <TH> RDist </TH> <TH> MassD </TH> <TH> Resources </TH>  </TR>
   <TR> <TD align="right"> 1 </TD> <TD> Andean Emerald </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 2.50 </TD> <TD align="right"> 10.00 </TD> <TD align="right"> 1500 </TD> <TD> 7/14/2013 </TD> <TD> O </TD> <TD align="right">   6 </TD> <TD align="right">  87 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 1.65 </TD> <TD align="right"> 1.65 </TD> <TD> Jul </TD> <TD> Amazilia.franciae </TD> <TD align="right"> 11.00 </TD> <TD align="right">  32 </TD> <TD>  </TD> <TD align="right"> 19.00 </TD> <TD align="right"> 22.71 </TD> <TD align="right"> 5.27 </TD> <TD align="right"> 5.68 </TD> <TD align="right"> 25.23 </TD> <TD align="right"> 55.03 </TD> <TD align="right"> 2.28 </TD> <TD align="right"> 19.92 </TD> <TD align="right"> 61.31 </TD> <TD align="right"> 7.68 </TD> <TD align="right"> 3.07 </TD> <TD align="right"> 0.26 </TD> <TD align="right"> 0.24 </TD> <TD align="right"> 9.79 </TD> <TD align="right"> 33.42 </TD> <TD align="right"> 10.93 </TD> <TD align="right"> 5.31 </TD> <TD align="right"> 2.87 </TD> <TD> Emerald </TD> <TD> Amazilia </TD> <TD> Amazilia franciae </TD> <TD align="right"> -1.38 </TD> <TD align="right"> -0.47 </TD> <TD align="right"> 0.12 </TD> <TD> Dist_Lower </TD> <TD align="right"> 130.00 </TD> <TD align="right"> -2.46 </TD> <TD align="right"> 2796.25 </TD> </TR>
