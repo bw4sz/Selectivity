@@ -1,6 +1,5 @@
+#Selectivity Experiments
 
-
-## ----,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE,results='asis'----
 ################################################################
 #Step 1 - Set up data environment and load in data
 ################################################################
@@ -30,10 +29,8 @@ dat$Sex<-toupper(dat$Sex)
 hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
 
 dat<-dat[,1:12]
-require(xtable)
 
 
-## ----,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE,results='asis'----
 #####################################
 #Step 2 - Data Cleaning and Sampling
 #####################################
@@ -43,11 +40,7 @@ vid_totals_date<-aggregate(dat$Video,list(dat$Elevation,dat$Treatment,dat$Date,d
 vid_totals_date<-cast(vid_totals_date,Group.1 + Group.3 + Group.4~Group.2)
 
 colnames(vid_totals_date)<-c("Elevation","Date","Replicate(O_R)","High Feeder","Low Feeder")
-require(xtable)
 
-
-## ------------------------------------------------------------------------
-require(chron)
 dat<-dat[!dat$Species %in% "UKWN",]
 
 #Create time columns
@@ -61,7 +54,6 @@ dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 #dat[which(dat$Time_Feeder_Obs < 0),]
 
 
-## ----,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE------------------
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
 
@@ -80,8 +72,6 @@ levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
 #Only use trials that have a high and low, ie levels=2
 complete.trial<- Trials[levels.trial ==2]
 
-
-## ----,message=FALSE,warning=FALSE,cache=TRUE,results='asis',echo=FALSE----
 ####Within trial metrics per species
 
 Tdata<-lapply(complete.trial,function(x){
@@ -129,9 +119,6 @@ selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
 print(xtable(head(selective.matrix)),type="html")
 
 
-
-## ----,message=FALSE,warning=FALSE,cache=TRUE-----------------------------
-
 #Optimal foraging says that individuals should occupy patches at a rate equal to their quality
 sH<-sum(selective.matrix$Minutes_High)
 sL<-sum(selective.matrix$Minutes_Low)
@@ -152,8 +139,14 @@ ggplot(selective.matrix,aes(x=Tvisits,y=Time_High)) + geom_point() + stat_smooth
 #Effect of increasing time on the high value resource on number of other species.
 ggplot(selective.matrix,aes(x=as.numeric(Richness-1),y=Minutes_High)) + geom_point() + stat_smooth(method="lm") + scale_x_continuous(breaks=seq(0,8,1)) + facet_wrap(~Species,scales="free")
 
+#get the weighted selectivity mean for each elevation
+ws<-sapply(split(selective.matrix,list(selective.matrix$Species,selective.matrix$Elevation),drop=TRUE),function(x){
+  weighted.mean(x$Selectivity,x$Total_Time,na.rm=TRUE)
+})
 
-## ----,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE------------------
+WS<-data.frame(colsplit(names(ws),"\\.",c("Species","Elevation")),ws)
+ggplot(WS,aes(y=ws > .75,x=factor(Elevation))) + geom_point() + facet_wrap(~Species)
+
 #pairs plot
 ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Elevation","Minutes_High","Minutes_Low","Minutes_Total","MonthA")])
 
@@ -301,7 +294,7 @@ distU<-apply(selective.matrix,1,function(x){
 selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
 
 #Selectivity and distance to range edge.
-ggplot(selective.matrix,aes(RDist,Selectivity,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) 
+rangeplot<-ggplot(selective.matrix,aes(RDist,Selectivity,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) 
 
 ##########################################
 #Selectivity as a function of body size
@@ -340,7 +333,7 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   massD<-x[["Mass"]] - max(unlist(mass_T))
   return(massD)})
 
-p<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 
 #####################################################
 #Compare Selectivity to Available Resource
@@ -369,10 +362,14 @@ selective.matrix$Resources<-sapply(1:nrow(selective.matrix),function(y){
   
   })
 
-p<-ggplot(selective.matrix,aes(x=Resources,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+#Resources plot
+resourceplot<-ggplot(selective.matrix,aes(x=Resources,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 p + facet_wrap(~Species)
 
 
+####PLot all three together
+
+multiplot(resourceplot,massplot,rangeplot,cols=3)
 # ############Quick look at temperature and elevation
 # require(scales)
 # ggplot(dat,aes(x=chron(Time.Begin),y=Temp,col=factor(Elevation))) + geom_smooth(se=FALSE) + scale_x_chron(format="%H")
@@ -392,10 +389,6 @@ ggsave("Thesis//Maquipucuna_SantaLucia/Results/TimeofDayElevation.svg",height=11
 ggplot(dat,aes(y=factor(Elevation),x=dat$Time_Stamp,col=Species)) + geom_point(size=3) + scale_x_datetime() + facet_wrap(~Species)
 ggsave("Thesis//Maquipucuna_SantaLucia/Results/DateElevation.svg",height=11,width=8,dpi=300)
 
-
-
-## ----,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE------------------
-
 #Species richness and identity at each elevation
 sp_matrixHL<-(table(dat$Species,dat$Elevation,dat$Treatment) >= 1) * 1
 
@@ -412,7 +405,6 @@ p + labs(fill="Present",x="Elevation")
 ggsave(paste(gitpath,"Figures/RangeExtentFeeders.svg",sep=""),dpi=300,height=8,width=11)
 
 
-## ----,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE------------------
 #Total Time per species
 Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),sum,na.rm=TRUE) 
 colnames(Total_Time_Species)<-c("Species","TotalTime")
@@ -421,7 +413,7 @@ Total_Time_Species$Time<-minutes(Total_Time_Species$TotalTime)+seconds(Total_Tim
 ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
 
-## ----,message=FALSE,warning=FALSE,cache=TRUE,echo=FALSE------------------
+
 #mean time feeding bout
 Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
 colnames(Mean_Time_Species)<-c("Species","Mean_Time")
@@ -429,14 +421,5 @@ ggplot(Mean_Time_Species,aes(Species,seconds(Mean_Time))) + geom_bar()  + theme_
 
 ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw()
 ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
-
-
-
-## ----,results='asis'-----------------------------------------------------
-print(xtable(vid_totals_date),type="html")
-
-
-## ----,results='asis'-----------------------------------------------------
-print(xtable(selective.matrix),type="html")
 
 
