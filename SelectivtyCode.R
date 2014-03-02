@@ -30,7 +30,6 @@ hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology
 
 dat<-dat[,1:12]
 
-
 #####################################
 #Step 2 - Data Cleaning and Sampling
 #####################################
@@ -53,7 +52,6 @@ dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 
 #Get any rownumbers that are negative, these need to be fixed. 
 #dat[which(dat$Time_Feeder_Obs < 0),]
-
 
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
@@ -198,14 +196,13 @@ rownames(avgStat)<-avgStat$Species
 pcaStat<-prcomp(avgStat[,-1],scale=TRUE)
 biplot(pcaStat)
 
-
 #unweighted
 p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1),family="binomial")
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 #weighted
 p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip & selective.matrix$Minutes_Total > 1,],aes(x=as.numeric(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
-p  + stat_smooth(method="glm",family="binomial") + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
+p  + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 # # #weighted and time
@@ -215,7 +212,6 @@ ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),hei
 
 ## Write selectivity tables to file
 write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
-
 
 #######################################
 #Selectivity, Phylogeny and Morphology
@@ -336,6 +332,29 @@ massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,l
 
 #read in flower totals from FlowerTransects.R
 fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
+
+#Bring in video data
+vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
+
+#just get videos from the summer months
+vid<-vid[vid$Month %in% c(6,7,8),]
+
+#Split videos into species lists
+vid.s<-split(vid,list(vid$Hummingbird))
+
+fl_s<-sapply(1:nrow(selective.matrix),function(g){
+x<-selective.matrix[g,]
+
+#Get the hummingbird index
+flIndex<-vid.s[[x$Species]]
+
+#Which species does the bird feed on
+fl.sp<-flIndex$Iplant_Double
+
+#How many of those flowers are within the elevation gradient at that month?
+flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb=="Jul"),]
+tfl<-sum(flower.month$Total_Flowers)
+return(tfl)})
 
 fl<-aggregate(fltransects$Total_Flowers,by=list(fltransects$month,fltransects$Elevation.Begin,fltransects$Elevation.End),sum,na.rm=TRUE)
 
