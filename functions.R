@@ -1,6 +1,5 @@
 ###Selectivity Functions
 
-
 #Define selectivity function
 selective<-function(y){
   #Aggregate time by species and treatment

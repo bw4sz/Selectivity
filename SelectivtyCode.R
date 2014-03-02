@@ -41,6 +41,7 @@ vid_totals_date<-cast(vid_totals_date,Group.1 + Group.3 + Group.4~Group.2)
 
 colnames(vid_totals_date)<-c("Elevation","Date","Replicate(O_R)","High Feeder","Low Feeder")
 
+print(vid_totals_date)
 dat<-dat[!dat$Species %in% "UKWN",]
 
 #Create time columns
@@ -60,6 +61,7 @@ S_H<-table(hours(dat$Time.Begin),dat$Species)
 #Create a species list for each video
 
 ####Match each trial together, trials are done on the same day at the same elevation
+
 #Split data into a list, with each compenent being one trial pair
 Trials<-split(dat, list(dat$Elevation,dat$Date,dat$Replicate),drop=TRUE)
 
@@ -81,9 +83,8 @@ Tdata<-lapply(complete.trial,function(x){
   dat.trials<-merge(merge(a,b),d)
   Elevation=unique(x$Elevation)
   Date=unique(x$Date)
+  Trichness<-length(a[minutes(times(a$Time_High + a$Time_Low)) > 1,]$Species)
   Replicate=unique(x$Replicate)
-  #Richness at that feeder
-  Trichness<-length(levels(droplevels(x$Species)))
   #Total visits
   Tvisits<-nrow(x)
   out<-data.frame(dat.trials,Elevation,Date,Replicate,Richness=Trichness,Tvisits)
@@ -92,6 +93,7 @@ Tdata<-lapply(complete.trial,function(x){
 #Bind dataset to a dataframe
 selective.matrix<-rbind.fill(Tdata)
 
+#Create times argument
 selective.matrix$Time_High<-times(selective.matrix$Time_High)
 selective.matrix$Time_Low<-times(selective.matrix$Time_Low)
 selective.matrix$Total_Time<-selective.matrix$Time_High + selective.matrix$Time_Low
@@ -116,14 +118,13 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 
 #Take out birds feeding less than 1min over the 6hours
 selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
-print(xtable(head(selective.matrix)),type="html")
-
 
 #Optimal foraging says that individuals should occupy patches at a rate equal to their quality
 sH<-sum(selective.matrix$Minutes_High)
 sL<-sum(selective.matrix$Minutes_Low)
 
 #Optimal foraging says its should be three
+print(sH/sL)
 
 #Competition keeps birds from occupying higher quality patch
 
@@ -137,7 +138,7 @@ ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smo
 ggplot(selective.matrix,aes(x=Tvisits,y=Time_High)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
 
 #Effect of increasing time on the high value resource on number of other species.
-ggplot(selective.matrix,aes(x=as.numeric(Richness-1),y=Minutes_High)) + geom_point() + stat_smooth(method="lm") + scale_x_continuous(breaks=seq(0,8,1)) + facet_wrap(~Species,scales="free")
+ggplot(selective.matrix,aes(x=as.numeric(Richness-1),y=Minutes_High)) + geom_point() + stat_smooth(method="lm") + scale_x_continuous(breaks=seq(0,8,1))
 
 #get the weighted selectivity mean for each elevation
 ws<-sapply(split(selective.matrix,list(selective.matrix$Species,selective.matrix$Elevation),drop=TRUE),function(x){
@@ -198,11 +199,6 @@ pcaStat<-prcomp(avgStat[,-1],scale=TRUE)
 biplot(pcaStat)
 
 
-## ----,message=FALSE,warning=FALSE,cache=TRUE-----------------------------
-#get only species that have atleast 2min
-sumT<-aggregate(selective.matrix$Minutes_Total,list(selective.matrix$Species),sum)
-speciesSkip<-sumT[sumT$x < 2,]$Group.1
-
 #unweighted
 p<-ggplot(selective.matrix[!selective.matrix$Species %in% speciesSkip, ],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1),family="binomial")
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
@@ -221,7 +217,6 @@ ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),hei
 write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
 
 
-## ----,message=FALSE,warning=FALSE,cache=TRUE-----------------------------
 #######################################
 #Selectivity, Phylogeny and Morphology
 #######################################
@@ -285,8 +280,8 @@ distU<-apply(selective.matrix,1,function(x){
   minR<-abs(as.numeric(x["Elevation"]) - as.numeric(rangeLim[rangeLim$Species %in% x["Species"],]$Min))
 
     
-  if(maxR > minR) {return(data.frame(UP="Dist_Upper",RDist=maxR))}
-  if(minR > maxR) {return(data.frame(UP="Dist_Lower",RDist=minR))}
+  if(maxR < minR) {return(data.frame(UP="Dist_Upper",RDist=maxR))}
+  if(minR < maxR) {return(data.frame(UP="Dist_Lower",RDist=minR))}
   
 })
 
@@ -294,8 +289,8 @@ distU<-apply(selective.matrix,1,function(x){
 selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
 
 #Selectivity and distance to range edge.
-rangeplot<-ggplot(selective.matrix,aes(RDist,Selectivity,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) 
-
+rangeplot<-ggplot(selective.matrix,aes(RDist,Selectivity,col=Species,size=Minutes_Total)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) 
+rangeplot + facet_wrap(nrow=2,~Species)
 ##########################################
 #Selectivity as a function of body size
 ##########################################
@@ -364,12 +359,13 @@ selective.matrix$Resources<-sapply(1:nrow(selective.matrix),function(y){
 
 #Resources plot
 resourceplot<-ggplot(selective.matrix,aes(x=Resources,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-p + facet_wrap(~Species)
+resourceplot + facet_wrap(~Species)
 
 
 ####PLot all three together
-
+jpeg("Thesis/Selectivity/HypothesisPlot.jpeg",res=300,height=5,width=20,units="in")
 multiplot(resourceplot,massplot,rangeplot,cols=3)
+dev.off()
 # ############Quick look at temperature and elevation
 # require(scales)
 # ggplot(dat,aes(x=chron(Time.Begin),y=Temp,col=factor(Elevation))) + geom_smooth(se=FALSE) + scale_x_chron(format="%H")
