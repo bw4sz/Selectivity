@@ -404,8 +404,8 @@ resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity)) + geom_point()
 
 resourceplotS+ facet_wrap(~Species,scales="free") 
 
-resourceplot<-ggplot(selective.matrix,aes(x=Resources,y=Minutes_Total,label=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-resourceplot + facet_wrap(~Species,scales="free_x")
+resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_Total,label=Species)) + geom_point() + stat_smooth(method="lm",aes(weight=Minutes_Total,group=1))
+resourceplot + facet_wrap(~Species,scales="free")
 
 ####PLot all three together
 jpeg("Thesis/Selectivity/HypothesisPlot.jpeg",res=300,height=5,width=20,units="in")
