@@ -11,7 +11,11 @@ Department of Ecology and Evolution, Stony Brook University, Stony Brook, New Yo
 Contributions: BW, CG developed the conceptual ideas for the MS; BW collected data, BW conducted the analyses; CG and BW wrote the MS
 
 ********
+Abstract
+---------
 
+
+************
 Introduction
 -------------
 
@@ -21,36 +25,44 @@ Optimal foraging theory posits that species should feed on most profitable resou
 
 Hummingbirds are highly specialized nectivorous feeders with adapted morphologies for extracting nectar from hummingbird pollinated flowers. Differences in foraging strategies have important ramifications for species metabolic rate, resource acquisition and mortality (cite). Hummingbird foraging ecology has been extensively studied (Camfield, 2006; P. A. Cotton, 1983; P. a. Cotton, 2006; Feinsinger & Colwell, 1978; González-Gómez, Vásquez, & Bozinovic, 2011; D. R. Powers & Conley, 1994; D. Powers, 1987), and hummingbirds are often partitioned into different syndromes based on their resource use, interspecific aggression and morphology. Feinsinger (1978) partitioned hummingbirds into six ecological roles: marauder, high-reward trapliner, filcher, generalist, territorialist, low-reward trapliner. While these categories are not absolute, and may change over time and space (Feinsinger & Colwell, 1978), they provide an overview for the spectrum of behaviors and associated morphologies, which can be used to categorize hummingbirds in an assemblage. Using these ecological roles, early studies evaluated eco-morphological connections between specific biomechanical flight measures (wing-disc loading, body mass, thrust) and interspecific dominance. For example, wing-disc loading (WDL) is the ratio of mass to wing span, and is a measure of hummingbird agility and thrust (but see Altshuler et al., 2002). Feinsinger and Colwell (1978) predicted that territorial individuals will have high WDL values, which gave them an advantage in flight performance. However, recent work has reexamined the relationship between wing-disc loading and territoriality, and did not support the earlier finding when incorporating phylogenetic interdependence (D. L. Altshuler, 2004). While it is clear that ecological roles are related to morphology (Figure 3), this relationship needs to refined and experimentally tested, especially in a phylogenetic context.
 
+There are several logistical challeneges of gathering quantatitive data on species interactions. These interactions tend to be diffuse across space, unpredictable, and hard to quantify. Observer based studies are often limited by manpower hours, which is often expensive and difficult to space evenly. We adopted an automated monitering strategy using novel time lapse cameras and computer vision methods to study aggresive behavior. While motion-sensing trail cameras have been utilized effectively, their cost and logistical constraints make them untenable for many behavioral and ecological studies. For example, many organisms move too slowly, or too quickly to trigger IR cameras. In addition, behaviors may happen across a series of images, rather than at exact point of the initial movement frame. Our aim was to develop an automated workflow that maintained the accuracy of a human observer, but increased sample sizes, logistical constaints, and reduced costs of observing hummingbird behavior.We use this system to study the abioitc and biotic factors governing hummingbird competitive ability across space and time. 
+
 ******
+
 Methods
 =========
 Study Site
 -----------
 Data was collected at the Maquipicuna Research Station and Santa Lucia Ecolodge (0.11838,-78.61205) between June and August 2013 along an elevation gradient of 1300-2600m. This elevation contains of regenerating secondary and primary cloud-forest, an ecotype dominated by cool year round temperatures, and pronounced  precipitation seasonality, with a warmer dry season (June-Sep) and a cooler rainy season (Jan  May) (Webster and Rhodes 2001). 
-Selectivity Experiments
-Every 200m of elevation, we placed a feeder with a high value resource (1.2M sucrose), and a low value resource (0.30M sucrose). Feeders were filled and opened for 3 days before filming. The feeders were cleaned, and the nectar was replenished every other day. For each species, selectivity will be measured by dividing the time spent feeding on the high value resource by the total feeding time (D. L. Altshuler, 2004; Pimm, Rosenzweig, & Mitchell, 1985; Sandlin, 2000). We removed selectivity events from very rare visitors to feeders ( > than 1min feeding from 6 hour) 
 
-Time-lapse Cameras
---------------------
-We used a novel monitoring technique using time lapse video cameras.  Time lapse cameras (Plotwatcher PRO  Day 6) recorded an image every second, beginning at 6am  12pm, and 12:30pm to 6pm. Cameras were set at each feeder for a minimum of four days. Comparative analysis with high definition cameras, as well as observer counts showed high fidelity and accuracy in bird identification and timing. Frames were given unique IDs based on date and elevation and stored on terabyte hard-drives until review. Utilizing computer vision libraries in python, we developed motion sensing algorithms to return frames with motion from background frames (OpenCV2 see Appendix A).  Comparative tests with an observer watching an entire video showed no difference between occurrence and species identification. Our pipeline returned the top 10% motion frames within the video, which were then scored by the author and assistant. We recorded all visits to a feeder where we visually could recover the bird actively feeding and noted the duration of feeding, rounded to the nearest 1 second.
+_Selectivity Experiments_
 
-Morphological Data
--------------------
+Every 200m of elevation, we placed a feeder with a high value resource (1.2M sucrose), and a low value resource (0.30M sucrose). Feeders were placed 6-8m apart. We wanted to ensure hummingbirds could visually see both feeders, but no one territroial bird could defend both feeders simultaneously. Feeders were filled and opened for 3 days before filming. The feeders were cleaned, and the nectar was replenished every other day. For each species, selectivity will be measured by dividing the time spent feeding on the high value resource by the total feeding time (D. L. Altshuler, 2004; Pimm, Rosenzweig, & Mitchell, 1985; Sandlin, 2000). We removed selectivity events from very rare visitors to feeders ( > than 1min feeding from 6 hour).
+
+_Time-lapse Cameras_
+We used a novel monitoring technique using time lapse video cameras.  Time lapse cameras (Plotwatcher PRO  Day 6) recorded an image every second, beginning at 6am  12pm, and 12:30pm to 6pm. Cameras were set within 2m of each feeder for a minimum of four days. Comparative analysis with high definition cameras, as well as observer counts showed high fidelity and accuracy in bird identification and timing. Frames were given unique IDs based on date and elevation and stored on terabyte hard-drives until review. Utilizing computer vision libraries in python, we developed motion sensing algorithms to return frames with motion from background frames (OpenCV2 see Appendix A).  Comparative tests with an observer watching an entire video showed no difference between occurrence and species identification. Our pipeline returned the top 10% motion frames within the video, which were then scored by the author and assistant. We recorded all visits to a feeder where we visually could recover the bird actively feeding and noted the duration of feeding, rounded to the nearest 1 second.
+
+_Morphological Data_
+
 For trait information, we used measurements of six traits in adult males: body mass, closed wing-length (i.e., wing chord), and length of exposed culmen, tarsus length, nail length, and wing loading (Graham et al. 2012, Appendix B). We choose these traits from a larger 17 trait datasat because they have a stronger biological basis, and are not highly correlated (Appendix B). Body mass is related to thermoregulatory adaptations to high elevation habitats, as well as aggressive interactions among territorial species (Altshuler and Dudley 2002, González-Gómez et al. 2011). Wing chord is a component of hovering flight, which becomes more difficult at high elevation due to lower air density (Feinsinger and Chaplin 1975). Bill length is associated with resource use through matching between bill lengths and corolla lengths in hummingbird pollinated plants (Temeles et al. 2002). We used principle components analysis on the standardized trait matrix to determine the axis of most variation among species in our assemblage. 
 
-Resource Availability and Use
------------------------------
+_Resource Availability and Use_
+
 To measure available resources we counted the number of hummingbird pollinated plants along six 1km transects along the elevation gradient. Each transect was placed to cover ~200m of elevation change along trails in primary and selectively logged forest. Hummingbird flowering plants were identified by direct observation or by using the well-established morphological syndromes following Backer (1973). For each plant, we estimated the number of total flowers by taking the average flowers on 3-5 stalks, and multiplying by the total number of stalks on a plant. Surveys were repeated twice a month. Flowers were identified using the extensive plant list established for the site, as well as consulting with a number of taxonomic experts (see acknowledgements). Surveys were repeated X times for each elevations over three months.
 
-Hummingbirds Occurrence
---------------------------
+_Hummingbirds Occurrence_
+
 To avoid circularity with the selectivity at the feeders, we estimated hummingbird range distribution from independent line transects along the elevation gradient. Observers walked at a slow and consistent pace along the 1km flower transects, only stopping to identify hummingbird species. Where hummingbirds were seen feeding on flowers, we noted the plant species, height and behavior (feeding, defending, piercing, etc.) The maximum and minimum elevation for each hummingbird species were used as the range limits along the elevation gradient. 
 
 **********
 
+**Results**
+===================
 
 
 
+<<<<<<< HEAD
+=======
 **What does the data look like?**
 
 <!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
@@ -64,15 +76,17 @@ To avoid circularity with the selectivity at the feeders, we estimated hummingbi
   <TR> <TD align="right"> 5 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> White-whiskered Hermit </TD> <TD>  </TD> <TD> 14:21:31 </TD> <TD> 14:22:00 </TD> <TD>  </TD> <TD align="right">  68 </TD> <TD>  </TD> </TR>
   <TR> <TD align="right"> 6 </TD> <TD> 130610AB </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right"> 1300 </TD> <TD> L </TD> <TD> White-whiskered Hermit </TD> <TD>  </TD> <TD> 14:27:54 </TD> <TD> 14:27:55 </TD> <TD>  </TD> <TD align="right">  68 </TD> <TD>  </TD> </TR>
    </TABLE>
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 
 
-There are 'r nrow(dat)'rows in the dataset.
 
-**Results**
-===================
+<<<<<<< HEAD
 
-How many videos have we reviewed for each date and elevation?
+From June 2013 - August 2013 we measured hummingbird feeding behavior along at 1500m elevation gradient. We reviewed 2199 days of video for high and low value feeders, totaling approximately 1.3194 &times; 10<sup>4</sup> hours of automated review and subsequent scoring by a human observer. For the feeders, we were able to ID over 99% of interactions, with the only difficulty distinguishing among very similiar juveniles (Green-crowned Brilliant versus Empress Brilliant). Our computer vision software process 6 hours of video in approximately 25 minutes on a Intel Core XXX CPU with XXX Ghz and 8 GB internal RAM.
 
+
+
+=======
 <!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
 <!-- Thu Feb 27 14:49:08 2014 -->
 <TABLE border=1>
@@ -103,8 +117,8 @@ How many videos have we reviewed for each date and elevation?
   <TR> <TD align="right"> 24 </TD> <TD align="right"> 2500 </TD> <TD> 6/27/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
   <TR> <TD align="right"> 25 </TD> <TD align="right"> 2500 </TD> <TD> 6/29/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
    </TABLE>
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 
-Table 1. Number of days of video analyzed for each elevation. For each elevation two sets of high and low value feeders were placed (O or R). The number of videos for each feeder that have been scored for hummingbird selectivity are shown for both the high and low value feeders. 
 
 
 
@@ -116,8 +130,13 @@ Table 1. Number of days of video analyzed for each elevation. For each elevation
 
 We analyzed 'r sum(sapply(Trials,function(x) nlevels(factor(hours(x$Time.Begin)))))' hours of video through our computer vision pipeline. For each trial the number of seconds feeding, the selectivity for each species, time between feeding bouts, total number of feeding seconds (Appendix A)
 
+<<<<<<< HEAD
+<!-- html table generated in R 3.0.2 by xtable 1.7-1 package -->
+<!-- Fri Feb 28 10:52:38 2014 -->
+=======
 <!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
 <!-- Thu Feb 27 14:49:09 2014 -->
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 <TABLE border=1>
 <TR> <TH>  </TH> <TH> Species </TH> <TH> Time_High </TH> <TH> Time_Low </TH> <TH> Selectivity </TH> <TH> bph </TH> <TH> avgF </TH> <TH> Elevation </TH> <TH> Date </TH> <TH> Replicate </TH> <TH> Richness </TH> <TH> Tvisits </TH> <TH> Total_Time </TH> <TH> Minutes_High </TH> <TH> Minutes_Low </TH> <TH> Minutes_Total </TH> <TH> MonthA </TH>  </TR>
   <TR> <TD align="right"> 1 </TD> <TD> Tawny-bellied Hermit </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.83 </TD> <TD align="right"> 7.50 </TD> <TD align="right"> 9.00 </TD> <TD align="right"> 1300 </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">  67 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 3.40 </TD> <TD align="right"> 0.72 </TD> <TD align="right"> 4.12 </TD> <TD> Jun </TD> </TR>
@@ -134,6 +153,14 @@ We analyzed 'r sum(sapply(Trials,function(x) nlevels(factor(hours(x$Time.Begin))
 Optimal Foraging
 ===========
 
+<<<<<<< HEAD
+
+```
+## [1] 1.791
+```
+
+=======
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-71.png) ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-72.png) ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-73.png) 
 
 
@@ -224,10 +251,52 @@ Figure 3. Average duration of feeding event for each species
 
 Appendix A
 ============
+
+Sampling information for each elevation
+
+<!-- html table generated in R 3.0.2 by xtable 1.7-1 package -->
+<!-- Fri Feb 28 11:03:50 2014 -->
+<TABLE border=1>
+<TR> <TH>  </TH> <TH> Elevation </TH> <TH> Date </TH> <TH> Replicate(O_R) </TH> <TH> High Feeder </TH> <TH> Low Feeder </TH>  </TR>
+  <TR> <TD align="right"> 1 </TD> <TD align="right"> 1300 </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 2 </TD> <TD align="right"> 1300 </TD> <TD> 6/11/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 3 </TD> <TD align="right"> 1300 </TD> <TD> 6/12/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   3 </TD> </TR>
+  <TR> <TD align="right"> 4 </TD> <TD align="right"> 1300 </TD> <TD> 6/13/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 5 </TD> <TD align="right"> 1300 </TD> <TD> 7/14/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 6 </TD> <TD align="right"> 1500 </TD> <TD> 6/10/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 7 </TD> <TD align="right"> 1500 </TD> <TD> 6/12/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 8 </TD> <TD align="right"> 1500 </TD> <TD> 7/14/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 9 </TD> <TD align="right"> 1700 </TD> <TD> 6/11/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 10 </TD> <TD align="right"> 1700 </TD> <TD> 6/12/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 11 </TD> <TD align="right"> 1700 </TD> <TD> 7/16/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 12 </TD> <TD align="right"> 1700 </TD> <TD> 7/18/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 13 </TD> <TD align="right"> 1900 </TD> <TD> 6/26/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 14 </TD> <TD align="right"> 1900 </TD> <TD> 7/1/2013 </TD> <TD> R </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 15 </TD> <TD align="right"> 1900 </TD> <TD> 7/2/2013 </TD> <TD> R </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 16 </TD> <TD align="right"> 1900 </TD> <TD> 8/10/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 17 </TD> <TD align="right"> 2100 </TD> <TD> 7/1/2013 </TD> <TD> O </TD> <TD align="right">   3 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 18 </TD> <TD align="right"> 2100 </TD> <TD> 8/6/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 19 </TD> <TD align="right"> 2100 </TD> <TD> 8/8/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 20 </TD> <TD align="right"> 2300 </TD> <TD> 6/27/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 21 </TD> <TD align="right"> 2300 </TD> <TD> 6/29/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 22 </TD> <TD align="right"> 2300 </TD> <TD> 8/10/2013 </TD> <TD> R </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+  <TR> <TD align="right"> 23 </TD> <TD align="right"> 2300 </TD> <TD> 8/6/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 24 </TD> <TD align="right"> 2500 </TD> <TD> 6/27/2013 </TD> <TD> O </TD> <TD align="right">   2 </TD> <TD align="right">   2 </TD> </TR>
+  <TR> <TD align="right"> 25 </TD> <TD align="right"> 2500 </TD> <TD> 6/29/2013 </TD> <TD> O </TD> <TD align="right">   1 </TD> <TD align="right">   1 </TD> </TR>
+   </TABLE>
+
+Table 1. Number of days of video analyzed for each elevation. For each elevation two sets of high and low value feeders were placed (O or R). The number of videos for each feeder that have been scored for hummingbird selectivity are shown for both the high and low value feeders. 
+
+
 Selective matrix for all trials and species.
 
+<<<<<<< HEAD
+<!-- html table generated in R 3.0.2 by xtable 1.7-1 package -->
+<!-- Fri Feb 28 11:03:50 2014 -->
+=======
 <!-- html table generated in R 3.0.1 by xtable 1.7-1 package -->
 <!-- Thu Feb 27 14:49:35 2014 -->
+>>>>>>> b11be5f4da282c9a3a1b948f5c98b38c1ca1cd11
 <TABLE border=1>
 <TR> <TH>  </TH> <TH> Species </TH> <TH> Time_High </TH> <TH> Time_Low </TH> <TH> Selectivity </TH> <TH> bph </TH> <TH> avgF </TH> <TH> Elevation </TH> <TH> Date </TH> <TH> Replicate </TH> <TH> Richness </TH> <TH> Tvisits </TH> <TH> Total_Time </TH> <TH> Minutes_High </TH> <TH> Minutes_Low </TH> <TH> Minutes_Total </TH> <TH> MonthA </TH> <TH> Row.names </TH> <TH> MorphID </TH> <TH> SpID </TH> <TH> Sex </TH> <TH> N </TH> <TH> Bill </TH> <TH> Mass </TH> <TH> Bill_width </TH> <TH> Total_Culmen </TH> <TH> WingChord </TH> <TH> Bill_Depth </TH> <TH> Wing_Width </TH> <TH> Wing_Length </TH> <TH> Aspect_Ratio </TH> <TH> Wing_Area </TH> <TH> Wing_Loading </TH> <TH> Wing_Taper </TH> <TH> Wing_Area.alArea. </TH> <TH> Tail_Length </TH> <TH> Foot_Extension </TH> <TH> Tarsus_Length </TH> <TH> Nail_Length </TH> <TH> Clade </TH> <TH> Genus </TH> <TH> double </TH> <TH> PC1 </TH> <TH> PC2 </TH> <TH> weighted.selectivity </TH> <TH> UP </TH> <TH> RDist </TH> <TH> MassD </TH> <TH> Resources </TH>  </TR>
   <TR> <TD align="right"> 1 </TD> <TD> Andean Emerald </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 2.50 </TD> <TD align="right"> 10.00 </TD> <TD align="right"> 1500 </TD> <TD> 7/14/2013 </TD> <TD> O </TD> <TD align="right">   6 </TD> <TD align="right">  87 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 1.65 </TD> <TD align="right"> 1.65 </TD> <TD> Jul </TD> <TD> Amazilia.franciae </TD> <TD align="right"> 11.00 </TD> <TD align="right">  32 </TD> <TD>  </TD> <TD align="right"> 19.00 </TD> <TD align="right"> 22.71 </TD> <TD align="right"> 5.27 </TD> <TD align="right"> 5.68 </TD> <TD align="right"> 25.23 </TD> <TD align="right"> 55.03 </TD> <TD align="right"> 2.28 </TD> <TD align="right"> 19.92 </TD> <TD align="right"> 61.31 </TD> <TD align="right"> 7.68 </TD> <TD align="right"> 3.07 </TD> <TD align="right"> 0.26 </TD> <TD align="right"> 0.24 </TD> <TD align="right"> 9.79 </TD> <TD align="right"> 33.42 </TD> <TD align="right"> 10.93 </TD> <TD align="right"> 5.31 </TD> <TD align="right"> 2.87 </TD> <TD> Emerald </TD> <TD> Amazilia </TD> <TD> Amazilia franciae </TD> <TD align="right"> -1.38 </TD> <TD align="right"> -0.47 </TD> <TD align="right"> 0.12 </TD> <TD> Dist_Lower </TD> <TD align="right"> 130.00 </TD> <TD align="right"> -2.46 </TD> <TD align="right"> 2796.25 </TD> </TR>
