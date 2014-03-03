@@ -23,6 +23,46 @@ bird_hour<-table(droplevels(x$Species),hours(x$Time.Begin))
 p<-apply(bird_hour,1,mean)
 return(data.frame(Species=names(p),bph=p))}
 
+#Average time between visits for each species, function takes in the trial for each date and elevation
+
+time_feed<-function(x){
+  
+  #split list by species
+  x.s<-split(x,list(x$Species),drop=TRUE)
+  
+  #repeat across all species
+  sp.out<-sapply(x.s,function(y){
+    
+    #create an empty vector
+    out<-vector()
+    
+    #for each row subtract the time between feeding events
+    
+    for(j in 1:nrow(y)-1){
+      
+      timeS<-y[j,"Time.End"]
+      timeE<-y[j+1,"Time.End"]
+      
+      #find difference in time
+      diff<-timeE - timeS
+      
+      #return time in terms of mintunes
+      out[j]<- minutes(diff) + seconds(diff)/60
+    }
+    
+    #add a NA for the last position, there is no last value
+    out<-c(out,NA)
+    
+    #find mean value for time between feeding
+    return(mean(out[is.finite(out)],na.rm=TRUE))
+  })
+  return(data.frame(Species=names(sp.out),Time_Feed=sp.out))
+}
+         
+  bird_hour<-table(droplevels(x$Species),hours(x$Time.Begin))
+  p<-apply(bird_hour,1,mean)
+  return(data.frame(Species=names(p),bph=p))}
+
 #average feeding time
 avgF<-function(x){
   T<-aggregate(x$Time_Feeder_Obs,list(x$Species),mean,na.rm=TRUE)
