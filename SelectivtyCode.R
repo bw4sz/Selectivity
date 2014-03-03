@@ -342,7 +342,7 @@ vid<-vid[vid$Month %in% c(6,7,8),]
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
-fl_s<-sapply(1:nrow(selective.matrix),function(g){
+selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
 x<-selective.matrix[g,]
 
 #Get the hummingbird index
@@ -356,6 +356,10 @@ flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$mon
 tfl<-sum(flower.month$Total_Flowers)
 return(tfl)})
 
+resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+
+
+#Or all flowers at those 400m elevation intervals
 fl<-aggregate(fltransects$Total_Flowers,by=list(fltransects$month,fltransects$Elevation.Begin,fltransects$Elevation.End),sum,na.rm=TRUE)
 
 colnames(fl)<-c("Month","Elevation.Begin","Elevation.End","TotalFlowers")
