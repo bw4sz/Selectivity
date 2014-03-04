@@ -57,7 +57,6 @@ dat[which(dat$Time_Feeder_Obs < 0),]
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
 
-
 #################################
 #Species Presence and Time
 ##################################
@@ -204,6 +203,7 @@ ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Elevation","Minutes_High
 
 #unweighted
 p<-ggplot(selective.matrix[],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1),family="binomial")
+p
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 #weighted
@@ -268,9 +268,19 @@ biplot(pcaStat)
 write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
 
 #Selectivity Descriptors for each species
-ggplot(selective.matrix,aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+ggplot(selective.matrix,aes(x=Species,Selectivity,col=Elevation)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
-#aggregate
+#Break out by elevation
+ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+
+#Facet by elevation
+ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2)
+
+
+#Facet by elevation, color by replicate
+ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x")
+
+#aggregate by species
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
 colnames(wss)<-c("Species","PC1","PC2","weighted.selectivity")
 
@@ -404,7 +414,7 @@ resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity)) + geom_point()
 
 resourceplotS+ facet_wrap(~Species,scales="free") 
 
-resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_Total,label=Species)) + geom_point() + stat_smooth(method="lm",aes(weight=Minutes_Total,group=1))
+resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_High,label=Species)) + geom_point() + stat_smooth(method="lm",aes(weight=Minutes_Total,group=1))
 resourceplot + facet_wrap(~Species,scales="free")
 
 ####PLot all three together
