@@ -276,7 +276,6 @@ ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + g
 #Facet by elevation
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2)
 
-
 #Facet by elevation, color by replicate
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x")
 
