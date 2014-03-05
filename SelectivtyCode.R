@@ -10,13 +10,13 @@ require(chron)
 require(reshape)
 
 #set gitpath
-gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+gitpath<-"C:/Users/Ben/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
+droppath<-"C:/Users/Ben/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -83,8 +83,8 @@ colnames(m.sp_m)<-c("Species","Elevation","Treatment","Presence")
 m.sp_m[m.sp_m$Presence==0,"Presence"]<-NA
 
 #richness across feeders
-p<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile() + theme_bw() + scale_fill_discrete(na.value="white")
-p + labs(fill="Present",x="Elevation")
+rangefeed<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presence)))+ geom_tile() + theme_bw() + scale_fill_discrete(na.value="white")
+rangefeed + labs(fill="Present",x="Elevation")
 ggsave(paste(gitpath,"Figures/RangeExtentFeeders.svg",sep=""),dpi=300,height=8,width=11)
 
 #Total Time per species
@@ -122,10 +122,20 @@ complete.trial<- Trials[levels.trial ==2]
 ####Within trial metrics per species
 
 Tdata<-lapply(complete.trial,function(x){
+  
+  #caluclate selectivity
   a<-selective(x)
+  
+  #calculate birds per hour
   b<-bph(x)
+  
+  #Average time between feeding
   k<-time_feed(x)
+  
+  #average duration of feeding bout
   d<-avgF(x)
+  
+  #merge data
   dat.trials<-merge(merge(merge(a,b),d),k)
   Elevation=unique(x$Elevation)
   Date=unique(x$Date)
