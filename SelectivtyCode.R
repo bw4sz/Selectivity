@@ -10,13 +10,13 @@ require(chron)
 require(reshape)
 
 #set gitpath
-gitpath<-"C:/Users/Ben/Documents/Selectivity/"
+gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -141,8 +141,10 @@ Tdata<-lapply(complete.trial,function(x){
   Date=unique(x$Date)
   Trichness<-length(a[minutes(times(a$Time_High + a$Time_Low)) > 1,]$Species)
   Replicate=unique(x$Replicate)
+ 
   #Total visits
   Tvisits<-nrow(x)
+  
   out<-data.frame(dat.trials,Elevation,Date,Replicate,Richness=Trichness,Tvisits)
   return(out)})
 
@@ -205,7 +207,7 @@ WS<-data.frame(colsplit(names(ws),"\\.",c("Species","Elevation")),ws)
 ggplot(WS,aes(y=ws > .75,x=factor(Elevation))) + geom_point() + facet_wrap(~Species)
 
 #pairs plot
-ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Elevation","Minutes_High","Minutes_Low","Minutes_Total","MonthA")])
+#ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Elevation","Minutes_High","Minutes_Low","Minutes_Total","MonthA")])
 
 #######################################
 #Elevation and Selectivity Analysis
@@ -271,6 +273,8 @@ avgStat<-merge(ws,avgStat,by.x="row.names",by.y="Species")
 colnames(avgStat)<-c("Species","W.Selectivity","avgF","bph","Time_Feed")
 rownames(avgStat)<-avgStat$Species
 
+#take out any NA's
+avgStat<-avgStat[complete.cases(avgStat),]
 pcaStat<-prcomp(avgStat[,-1],scale=TRUE)
 biplot(pcaStat)
 
@@ -278,7 +282,7 @@ biplot(pcaStat)
 write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
 
 #Selectivity Descriptors for each species
-ggplot(selective.matrix,aes(x=Species,Selectivity,col=Elevation)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+ggplot(selective.matrix,aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
 #Break out by elevation
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
@@ -293,6 +297,8 @@ ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
 colnames(wss)<-c("Species","PC1","PC2","weighted.selectivity")
 
+ggplot(selective.matrix[selective.matrix$Elevation==1500,],aes(x=Species,y=Selectivity,col=Date)) + geom_point(size=6) + facet_wrap(~Replicate)
+
 biplot(trait_pc)
 
 ggplot(wss,aes(x=PC2,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
@@ -304,6 +310,10 @@ p
 p<-ggplot(selective.matrix,aes(x=PC2,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
 p
 
+###########################################################################
+#P
+#
+###########################################################################
 #########################################################
 #Selectivity as function of distance to nearest range edge
 ##########################################################
@@ -351,6 +361,8 @@ distU<-apply(selective.matrix,1,function(x){
 })
 
 #append to dataset
+lapply(distU,data.frame)
+
 selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
 
 #Selectivity and distance to range edge.
@@ -371,16 +383,26 @@ mass.lists<-lapply(sp.lists,function(x){
   hum.morph[hum.morph$English %in% x, "Mass"]
 })
 
+#time lists
+
+comp
 #For each row in the selectivity matrix, get the difference to the largest species
 
 #get the species with the max body size at the feeder during that trial
 selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   x<-selective.matrix[y,]
+  
   #find the index in the list
   index<-paste(paste(x["Elevation"],x[["Date"]],sep="."),x[["Replicate"]],sep=".")
   
   mass_T<-mass.lists[names(mass.lists) %in% index]
+  
+
+  
+  #weighted mass difference, the mass to all species
+  #multiple total time feeding by mass
+  selective.matrix[selective.matrix$Elevation %in% x["Elevation"],selective.matrix$Date %in% x[["Date"]],x[["Replicate"]],sep=".")]
   
   #mass of the species minus max
   massD<-x[["Mass"]] - max(unlist(mass_T))
@@ -420,9 +442,7 @@ tfl<-sum(flower.month$Total_Flowers)
 return(tfl)})
 
 resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity)) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-
 resourceplotS+ facet_wrap(~Species,scales="free") 
-
 resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_High,label=Species)) + geom_point() + stat_smooth(method="lm",aes(weight=Minutes_Total,group=1))
 resourceplot + facet_wrap(~Species,scales="free")
 
@@ -430,6 +450,7 @@ resourceplot + facet_wrap(~Species,scales="free")
 jpeg("Thesis/Selectivity/HypothesisPlot.jpeg",res=300,height=5,width=20,units="in")
 multiplot(resourceplot,massplot,rangeplot,cols=3)
 dev.off()
+
 # ############Quick look at temperature and elevation
 # require(scales)
 # ggplot(dat,aes(x=chron(Time.Begin),y=Temp,col=factor(Elevation))) + geom_smooth(se=FALSE) + scale_x_chron(format="%H")

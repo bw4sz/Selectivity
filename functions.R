@@ -59,10 +59,7 @@ time_feed<-function(x){
   return(data.frame(Species=names(sp.out),Time_Feed=sp.out))
 }
          
-  bird_hour<-table(droplevels(x$Species),hours(x$Time.Begin))
-  p<-apply(bird_hour,1,mean)
-  return(data.frame(Species=names(p),bph=p))}
-
+ 
 #average feeding time
 avgF<-function(x){
   T<-aggregate(x$Time_Feeder_Obs,list(x$Species),mean,na.rm=TRUE)
