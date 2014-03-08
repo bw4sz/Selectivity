@@ -10,13 +10,13 @@ require(chron)
 require(reshape)
 
 #set gitpath
-gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+gitpath<-"C:/Users/Ben/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
+droppath<-"C:/Users/Ben/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -135,8 +135,23 @@ Tdata<-lapply(complete.trial,function(x){
   #average duration of feeding bout
   d<-avgF(x)
   
+  #total visits
+  tss<-data.frame(table(droplevels(x$Species)))
+  colnames(tss)<-c("Species","N")
+  
+  #visits of other species
+  visitsOthers<-sapply(levels(factor(x$Species)),function(g){
+   sum(tss[!tss$Species %in% g,"N"])
+  })
+  
+  visitsOthers<-data.frame(Species=names(visitsOthers),visitsOthers)
+         
+  tss<-data.frame(table(droplevels(x$Species)))
+  colnames(tss)<-c("Species","N")
+  
+  
   #merge data
-  dat.trials<-merge(merge(merge(a,b),d),k)
+  dat.trials<-merge(merge(merge(merge(merge(a,b),d),k),tss),visitsOthers)
   Elevation=unique(x$Elevation)
   Date=unique(x$Date)
   Trichness<-length(a[minutes(times(a$Time_High + a$Time_Low)) > 1,]$Species)
@@ -175,7 +190,7 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 # hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
 
 #Take out birds feeding less than 1min over the 6hours
-selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
+selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 2,]
 
 #Optimal foraging says that individuals should occupy patches at a rate equal to their quality
 sH<-sum(selective.matrix$Minutes_High)
@@ -196,18 +211,12 @@ ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smo
 ggplot(selective.matrix,aes(x=Tvisits,y=Time_High)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
 
 #Effect of increasing time on the high value resource on number of other species.
-ggplot(selective.matrix,aes(x=as.numeric(Richness-1),y=Minutes_High)) + geom_point() + stat_smooth(method="lm") + scale_x_continuous(breaks=seq(0,8,1))
+ggplot(selective.matrix,aes(x=visitsOthers,y=Selectivity)) + geom_point() + stat_smooth(method="lm") 
 
-#get the weighted selectivity mean for each elevation
-ws<-sapply(split(selective.matrix,list(selective.matrix$Species,selective.matrix$Elevation),drop=TRUE),function(x){
-  weighted.mean(x$Selectivity,x$Total_Time,na.rm=TRUE)
-})
-
-WS<-data.frame(colsplit(names(ws),"\\.",c("Species","Elevation")),ws)
-ggplot(WS,aes(y=ws > .75,x=factor(Elevation))) + geom_point() + facet_wrap(~Species)
 
 #pairs plot
-#ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Elevation","Minutes_High","Minutes_Low","Minutes_Total","MonthA")])
+require(GGally)
+ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Time_Feed","N","visitsOthers")])
 
 #######################################
 #Elevation and Selectivity Analysis
@@ -264,13 +273,13 @@ ws<-sapply(split(selective.matrix,selective.matrix$Species),function(x){
 selective.matrix<-merge(selective.matrix,data.frame(weighted.selectivity=ws),by.x="Species",by.y="row.names")
 
 #average metrics across species
-avgStat<-aggregate(selective.matrix[,c("avgF","bph","Time_Feed")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
+avgStat<-aggregate(selective.matrix[,c("avgF","bph","Time_Feed","N.x")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
 
 colnames(avgStat)[1]<-"Species"
 
 #merge with weighted selectivity
 avgStat<-merge(ws,avgStat,by.x="row.names",by.y="Species")
-colnames(avgStat)<-c("Species","W.Selectivity","avgF","bph","Time_Feed")
+colnames(avgStat)<-c("Species","W.Selectivity","avgF","bph","Time_Feed","N")
 rownames(avgStat)<-avgStat$Species
 
 #take out any NA's
@@ -283,9 +292,6 @@ write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Result
 
 #Selectivity Descriptors for each species
 ggplot(selective.matrix,aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
-
-#Break out by elevation
-ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
 #Facet by elevation
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2)
@@ -360,8 +366,6 @@ distU<-apply(selective.matrix,1,function(x){
   
 })
 
-#append to dataset
-lapply(distU,data.frame)
 
 selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
 
@@ -383,9 +387,7 @@ mass.lists<-lapply(sp.lists,function(x){
   hum.morph[hum.morph$English %in% x, "Mass"]
 })
 
-#time lists
 
-comp
 #For each row in the selectivity matrix, get the difference to the largest species
 
 #get the species with the max body size at the feeder during that trial
@@ -398,11 +400,12 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   mass_T<-mass.lists[names(mass.lists) %in% index]
   
-
   
   #weighted mass difference, the mass to all species
   #multiple total time feeding by mass
-  selective.matrix[selective.matrix$Elevation %in% x["Elevation"],selective.matrix$Date %in% x[["Date"]],x[["Replicate"]],sep=".")]
+  sapply(y$Species,function(p){
+    
+  })
   
   #mass of the species minus max
   massD<-x[["Mass"]] - max(unlist(mass_T))
