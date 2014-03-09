@@ -190,7 +190,7 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 # hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
 
 #Take out birds feeding less than 1min over the 6hours
-selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 2,]
+selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
 
 #Optimal foraging says that individuals should occupy patches at a rate equal to their quality
 sH<-sum(selective.matrix$Minutes_High)
@@ -212,7 +212,6 @@ ggplot(selective.matrix,aes(x=Tvisits,y=Time_High)) + geom_point() + stat_smooth
 
 #Effect of increasing time on the high value resource on number of other species.
 ggplot(selective.matrix,aes(x=visitsOthers,y=Selectivity)) + geom_point() + stat_smooth(method="lm") 
-
 
 #pairs plot
 require(GGally)
@@ -316,6 +315,10 @@ p
 p<-ggplot(selective.matrix,aes(x=PC2,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
 p
 
+
+#redundancy analysis and behavioral descriptors
+
+
 ###########################################################################
 #P
 #
@@ -403,15 +406,22 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   #weighted mass difference, the mass to all species
   #multiple total time feeding by mass
-  sapply(y$Species,function(p){
-    
-  })
   
-  #mass of the species minus max
-  massD<-x[["Mass"]] - max(unlist(mass_T))
-  return(massD)})
+  #get trial, with all species not included in the focal y row
+  trialT<-selective.matrix[selective.matrix$Elevation %in% x[["Elevation"]]& selective.matrix$Date %in% x[["Date"]] & selective.matrix$Replicate %in% x[["Replicate"]] & !selective.matrix$Species==x[["Species"]] ,]  
+  
+  #create the mass "environment" ie mean mass difference between the focal species and all competitors, weighted by time feeding.
+  #first get mass difference by each species and their time
+  diff<-x$Mass - trialT$Mass
+  
+  diff<-diff[is.finite(diff)]
+  #mean weighted differences
+  weight.diff<-weighted.mean(diff,trialT$Minutes_Total,na.rm=TRUE)
+  
+  return(weight.diff)})
 
 massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+massplot + facet_wrap(~Elevation)
 
 #####################################################
 #Selectivity and Available Resource
@@ -440,13 +450,20 @@ fl.sp<-flIndex$Iplant_Double
 
 #How many of those flowers are within the elevation gradient at that month?
 #within the 400m gradient
-flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$Elevation.Begin %in% x$Elevation|fltransects$Elevation.End %in% x$Elevation),]
-tfl<-sum(flower.month$Total_Flowers)
-return(tfl)})
 
-resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity)) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$Elevation.Begin %in% x$Elevation|fltransects$Elevation.End %in% x$Elevation),]
+
+#aggregate on a per transect basis
+if(nrow(flower.month)== 0){return(0)}
+
+mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mean)
+
+return(mean(mean.fl$x,na.rm=TRUE))})
+
+resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial")
 resourceplotS+ facet_wrap(~Species,scales="free") 
-resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_High,label=Species)) + geom_point() + stat_smooth(method="lm",aes(weight=Minutes_Total,group=1))
+
+resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_Total,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
 resourceplot + facet_wrap(~Species,scales="free")
 
 ####PLot all three together
