@@ -9,6 +9,7 @@ require(ggplot2)
 require(chron)
 require(reshape)
 require(plotKML)
+require(maptools)
 
 #set gitpath
 gitpath<-"C:/Users/Ben/Documents/Selectivity/"
@@ -431,25 +432,29 @@ massplot + facet_wrap(~Elevation)
 #read in flower totals from FlowerTransects.R
 fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
 
+#just summer data
+fltransects<-fltransects[fltransects$month %in% c(6,7,8),]
+
 #Bring in video data
 vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
 #just get videos from the summer months
 vid<-vid[vid$Month %in% c(6,7,8),]
 
-#get the gps points
-f<-list.files(paste(droppath,"Thesis\\Maquipucuna_SantaLucia\\Data2013\\GPS\\KarenGPS\\",sep=""),full.names=TRUE,recursive=TRUE,patter=".gpx")
+#match with spatial info
+gps<-readShapePoints(paste(droppath,"Thesis\\Maquipucuna_SantaLucia\\Data2013\\Shapefiles\\GPSshape.shp",sep=""))@data
 
-gpx<-list()
-for (x in 1:length(f)){
-  print(x)
-  try(
-    gpx[[x]]<-readGPX(f[x],waypoints=TRUE)$waypoints)
-}
+gps<-droplevels(gps[gps$MonthID %in% c(6,7,8),])
 
-###match to dataframe.
+gps$nameNumeric<-as.numeric(gps$name)
 
+mergdat<-merge(fltransects,gpx.dat,by.y="name",by.x="GPS_ID")
 
+missingD<-fltransects$GPS_ID[!fltransects$GPS_ID %in% mergdat$GPS_ID]
+
+readsh(gps,"Thesis\\Maquipucuna_SantaLucia\\Data2013\\Shapefiles\\GPSshape.shp")
+
+head(fltransects[is.na(fltransects$GPS_ID),])
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
