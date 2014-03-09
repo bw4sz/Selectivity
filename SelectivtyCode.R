@@ -8,6 +8,7 @@
 require(ggplot2)
 require(chron)
 require(reshape)
+require(plotKML)
 
 #set gitpath
 gitpath<-"C:/Users/Ben/Documents/Selectivity/"
@@ -190,7 +191,7 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 # hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
 
 #Take out birds feeding less than 1min over the 6hours
-selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
+#selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
 
 #Optimal foraging says that individuals should occupy patches at a rate equal to their quality
 sH<-sum(selective.matrix$Minutes_High)
@@ -436,6 +437,19 @@ vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/Humm
 #just get videos from the summer months
 vid<-vid[vid$Month %in% c(6,7,8),]
 
+#get the gps points
+f<-list.files(paste(droppath,"Thesis\\Maquipucuna_SantaLucia\\Data2013\\GPS\\KarenGPS\\",sep=""),full.names=TRUE,recursive=TRUE,patter=".gpx")
+
+gpx<-list()
+for (x in 1:length(f)){
+  print(x)
+  try(
+    gpx[[x]]<-readGPX(f[x],waypoints=TRUE)$waypoints)
+}
+
+###match to dataframe.
+
+
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
@@ -451,7 +465,20 @@ fl.sp<-flIndex$Iplant_Double
 #How many of those flowers are within the elevation gradient at that month?
 #within the 400m gradient
 
-flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$Elevation.Begin %in% x$Elevation|fltransects$Elevation.End %in% x$Elevation),]
+if(x[["Elevation"]]==1700){
+  
+  flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$Elevation.End %in% x$Elevation),]
+  
+}
+
+if(!x[["Elevation"]] == 1700){
+  
+  flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$Elevation.Begin %in% x$Elevation|fltransects$Elevation.End %in% x$Elevation),]
+  
+}
+
+
+#if elevation is 1700, we don't want to grab the transects from above, since they aren't on the same side.
 
 #aggregate on a per transect basis
 if(nrow(flower.month)== 0){return(0)}
@@ -460,7 +487,7 @@ mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mea
 
 return(mean(mean.fl$x,na.rm=TRUE))})
 
-resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial")
+resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 resourceplotS+ facet_wrap(~Species,scales="free") 
 
 resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_Total,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
