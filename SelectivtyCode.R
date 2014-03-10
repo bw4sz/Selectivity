@@ -112,6 +112,7 @@ ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11
 
 ####Match each trial together, trials are done on the same day at the same elevation
 
+
 #Split data into a list, with each compenent being one trial pair
 Trials<-split(dat, list(dat$Elevation,dat$Date,dat$Replicate),drop=TRUE)
 
@@ -433,7 +434,9 @@ massplot + facet_wrap(~Elevation)
 fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
 
 #just summer data
-fltransects<-fltransects[fltransects$month %in% c(6,7,8),]
+fltransects<-droplevels(fltransects[fltransects$month %in% c(6,7,8),])
+
+fltransects$GPS_ID<-as.numeric(as.character(fltransects$GPS_ID))
 
 #Bring in video data
 vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
@@ -441,20 +444,36 @@ vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/Humm
 #just get videos from the summer months
 vid<-vid[vid$Month %in% c(6,7,8),]
 
-#match with spatial info
+#match with spatial infodim
 gps<-readShapePoints(paste(droppath,"Thesis\\Maquipucuna_SantaLucia\\Data2013\\Shapefiles\\GPSshape.shp",sep=""))@data
 
 gps<-droplevels(gps[gps$MonthID %in% c(6,7,8),])
 
-gps$nameNumeric<-as.numeric(gps$name)
+gps$GPS_ID<-as.numeric(as.character(gps$GPS_ID))
 
-mergdat<-merge(fltransects,gpx.dat,by.y="name",by.x="GPS_ID")
+#GPSID + month
+gps$mergeID<-paste(gps$GPS_ID,gps$MonthID,sep="_")
 
-missingD<-fltransects$GPS_ID[!fltransects$GPS_ID %in% mergdat$GPS_ID]
+fltransects$mergeID<-paste(fltransects$GPS_ID,fltransects$month,sep="_")
 
-readsh(gps,"Thesis\\Maquipucuna_SantaLucia\\Data2013\\Shapefiles\\GPSshape.shp")
+table(fltransects$mergeID %in% gps$mergeID)
+table(fltransects$GPS_ID %in% gps$GPS_ID)
 
-head(fltransects[is.na(fltransects$GPS_ID),])
+mergdat<-merge(fltransects,gps,by="mergeID")
+
+firstpass<-mergdat[-which(duplicated(mergdat[,1:48])),]
+
+first
+table(firstpass$Date)
+dim(firstpass)
+
+dim(fltransects)
+
+
+table(fltransects$Date)
+#which dates are missing
+table(fltransects[which(!fltransects$mergeID %in% firstpass$mergeID),]$Date)
+
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
