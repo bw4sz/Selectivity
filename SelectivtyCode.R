@@ -144,11 +144,11 @@ Tdata<-lapply(complete.trial,function(x){
   
   #visits of other species
   visitsOthers<-sapply(levels(factor(x$Species)),function(g){
-   sum(tss[!tss$Species %in% g,"N"])
+    sum(tss[!tss$Species %in% g,"N"])
   })
   
   visitsOthers<-data.frame(Species=names(visitsOthers),visitsOthers)
-         
+  
   tss<-data.frame(table(droplevels(x$Species)))
   colnames(tss)<-c("Species","N")
   
@@ -159,7 +159,7 @@ Tdata<-lapply(complete.trial,function(x){
   Date=unique(x$Date)
   Trichness<-length(a[minutes(times(a$Time_High + a$Time_Low)) > 1,]$Species)
   Replicate=unique(x$Replicate)
- 
+  
   #Total visits
   Tvisits<-nrow(x)
   
@@ -369,8 +369,8 @@ distU<-apply(selective.matrix,1,function(x){
   
   maxR<-abs(as.numeric(x["Elevation"]) - as.numeric(rangeLim[rangeLim$Species %in% x["Species"],]$Max))
   minR<-abs(as.numeric(x["Elevation"]) - as.numeric(rangeLim[rangeLim$Species %in% x["Species"],]$Min))
-
-    
+  
+  
   if(maxR < minR) {return(data.frame(UP="Dist_Upper",RDist=maxR))}
   if(minR < maxR) {return(data.frame(UP="Dist_Lower",RDist=minR))}
   
@@ -526,7 +526,7 @@ selective.matrix$MultD<-sapply(1:nrow(selective.matrix),function(y){
   
   x<-selective.matrix[y,]
   
-   #weighted mass difference, the mass to all species
+  #weighted mass difference, the mass to all species
   #multiple total time feeding by mass
   
   #get trial, with all species not included in the focal y row
@@ -534,7 +534,7 @@ selective.matrix$MultD<-sapply(1:nrow(selective.matrix),function(y){
   
   #get mean multivariate distance
   PCdiff<-d.pca[as.character(x[["Species"]]),as.character(trialT[["Species"]])]
-
+  
   PCdiff<-PCdiff[is.finite(PCdiff)]
   #mean weighted differences
   weight.diffW<-weighted.mean(PCdiff,trialT$Minutes_Total,na.rm=TRUE)
@@ -579,46 +579,34 @@ table(fltransects$GPS_ID %in% gps$GPS_ID)
 
 fltransects<-merge(fltransects,gps,by="mergeID")
 
+#where elevation failed, take the midpoint of the transect
+
+fltransects[is.na(fltransects$ele),"ele"]<-apply(fltransects[is.na(fltransects$ele),c("Elevation.Begin","Elevation.End")],1,mean)
+
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
 selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
-
+  
   #grab row
   x<-selective.matrix[g,]
-
-#Get the hummingbird index
-flIndex<-vid.s[[x$Species]]
-
-#Which species does the bird feed on
-fl.sp<-flIndex$Iplant_Double
-
-  flower.avail<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$ele > x[["Elevation"]]-100 &fltransects$ele < x[["Elevation"]]+ 100) ,]
   
-#How many of those flowers are within the elevation gradient at that month?
-#within the 400m gradient
-
-if(x[["Elevation"]]==1700){
+  #Get the hummingbird index
+  flIndex<-vid.s[[x$Species]]
   
-  flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$Elevation.End %in% x$Elevation),]
+  #Which species does the bird feed on
+  fl.sp<-flIndex$Iplant_Double
   
-}
-
-if(!x[["Elevation"]] == 1700){
+  #dates within two weeks either side. 
   
-  flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$Elevation.Begin %in% x$Elevation|fltransects$Elevation.End %in% x$Elevation),]
+  dateL<-abs(difftime(as.POSIXlt(x[["Date"]],format="%m/%d/%Y"),  as.POSIXlt(fltransects$Date,format="%m/%d/%Y"),units="weeks")) <= 2
   
-}
-
-
-#if elevation is 1700, we don't want to grab the transects from above, since they aren't on the same side.
-
-#aggregate on a per transect basis
-if(nrow(flower.month)== 0){return(0)}
-
-mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mean)
-
-return(mean(mean.fl$x,na.rm=TRUE))})
+  flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & dateL & (fltransects$ele > x[["Elevation"]]-100 &fltransects$ele < x[["Elevation"]]+ 100) ,]
+  if(nrow(flower.month)==0) return(NA)
+  
+  mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mean)
+  
+  return(mean(mean.fl$x,na.rm=TRUE))})
 
 resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 resourceplotS+ facet_wrap(~Species,scales="free") 
