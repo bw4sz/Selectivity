@@ -12,13 +12,13 @@ require(plotKML)
 require(maptools)
 
 #set gitpath
-gitpath<-"C:/Users/Ben/Documents/Selectivity/"
+gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -193,7 +193,7 @@ selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%
 # hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
 
 #Take out birds feeding less than 1min over the 6hours
-#selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
+selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
 
 #Optimal foraging says that individuals should occupy patches at a rate equal to their quality
 sH<-sum(selective.matrix$Minutes_High)
@@ -256,6 +256,10 @@ trait_pc<-prcomp(na.omit(zscore))
 
 #View Biplot of PC Space
 biplot(trait_pc)
+
+#distance in PCA space
+
+d.pca<-as.matrix(dist(trait_pc$x))
 
 #bind loadings 1 and 2 to dataframe
 hum_load<-trait_pc$x[,c("PC1","PC2")]
@@ -393,7 +397,6 @@ mass.lists<-lapply(sp.lists,function(x){
   hum.morph[hum.morph$English %in% x, "Mass"]
 })
 
-
 #For each row in the selectivity matrix, get the difference to the largest species
 
 #get the species with the max body size at the feeder during that trial
@@ -426,6 +429,121 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
 massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 massplot + facet_wrap(~Elevation)
 
+#################Repeat for PC1######################
+#####################################################
+#Selectivity as a function of difference in body size
+#####################################################
+
+#get body size lists for each trial
+PC1.lists<-lapply(sp.lists,function(x){
+  hum.morph[hum.morph$English %in% x, "PC1"]
+})
+
+#For each row in the selectivity matrix, get the difference to the largest species
+
+#get the species with the max body size at the feeder during that trial
+selective.matrix$PC1D<-sapply(1:nrow(selective.matrix),function(y){
+  
+  x<-selective.matrix[y,]
+  
+  #find the index in the list
+  index<-paste(paste(x["Elevation"],x[["Date"]],sep="."),x[["Replicate"]],sep=".")
+  
+  mass_T<-PC1.lists[names(PC1.lists) %in% index]
+  
+  #weighted mass difference, the mass to all species
+  #multiple total time feeding by mass
+  
+  #get trial, with all species not included in the focal y row
+  trialT<-selective.matrix[selective.matrix$Elevation %in% x[["Elevation"]]& selective.matrix$Date %in% x[["Date"]] & selective.matrix$Replicate %in% x[["Replicate"]] & !selective.matrix$Species==x[["Species"]] ,]  
+  
+  #create the mass "environment" ie mean mass difference between the focal species and all competitors, weighted by time feeding.
+  #first get mass difference by each species and their time
+  diff<-x$PC1 - trialT$PC1
+  
+  diff<-diff[is.finite(diff)]
+  #mean weighted differences
+  weight.diff<-weighted.mean(diff,trialT$Minutes_Total,na.rm=TRUE)
+  
+  return(weight.diff)})
+
+PC1D<-ggplot(selective.matrix,aes(x=PC1D,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+PC1D + facet_wrap(~Elevation)
+
+
+#################Repeat for PC2######################
+#####################################################
+#Selectivity as a function of difference in body size
+#####################################################
+
+#get body size lists for each trial
+PC2.lists<-lapply(sp.lists,function(x){
+  hum.morph[hum.morph$English %in% x, "PC2"]
+})
+
+
+#For each row in the selectivity matrix, get the difference to the largest species
+
+#get the species with the max body size at the feeder during that trial
+selective.matrix$PC2D<-sapply(1:nrow(selective.matrix),function(y){
+  
+  x<-selective.matrix[y,]
+  
+  #find the index in the list
+  index<-paste(paste(x["Elevation"],x[["Date"]],sep="."),x[["Replicate"]],sep=".")
+  
+  mass_T<-PC2.lists[names(PC2.lists) %in% index]
+  
+  #weighted mass difference, the mass to all species
+  #multiple total time feeding by mass
+  
+  #get trial, with all species not included in the focal y row
+  trialT<-selective.matrix[selective.matrix$Elevation %in% x[["Elevation"]]& selective.matrix$Date %in% x[["Date"]] & selective.matrix$Replicate %in% x[["Replicate"]] & !selective.matrix$Species==x[["Species"]] ,]  
+  
+  #create the mass "environment" ie mean mass difference between the focal species and all competitors, weighted by time feeding.
+  #first get mass difference by each species and their time
+  diff<-x$PC2 - trialT$PC2
+  
+  diff<-diff[is.finite(diff)]
+  #mean weighted differences
+  weight.diff<-weighted.mean(diff,trialT$Minutes_Total,na.rm=TRUE)
+  
+  return(weight.diff)})
+
+PC2D<-ggplot(selective.matrix,aes(x=PC2D,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+PC2D + facet_grid(MonthA~Elevation)
+
+#################Multivariate distance######################
+#####################################################
+#Selectivity as a function of difference in body size
+#####################################################
+
+
+#For each row in the selectivity matrix, get the difference to the largest species
+
+#get the species with the max body size at the feeder during that trial
+selective.matrix$MultD<-sapply(1:nrow(selective.matrix),function(y){
+  
+  x<-selective.matrix[y,]
+  
+   #weighted mass difference, the mass to all species
+  #multiple total time feeding by mass
+  
+  #get trial, with all species not included in the focal y row
+  trialT<-selective.matrix[selective.matrix$Elevation %in% x[["Elevation"]]& selective.matrix$Date %in% x[["Date"]] & selective.matrix$Replicate %in% x[["Replicate"]] & !selective.matrix$Species==x[["Species"]] ,]  
+  
+  #get mean multivariate distance
+  PCdiff<-d.pca[as.character(x[["Species"]]),as.character(trialT[["Species"]])]
+
+  PCdiff<-PCdiff[is.finite(PCdiff)]
+  #mean weighted differences
+  weight.diffW<-weighted.mean(PCdiff,trialT$Minutes_Total,na.rm=TRUE)
+  weight.diff<-mean(PCdiff,na.rm=TRUE)
+  
+  return(weight.diffW)})
+
+MultD<-ggplot(data=selective.matrix,aes(x=MultD,y=Selectivity,size=Minutes_Total,col=Species)) + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) + geom_point()
+MultD + facet_wrap(~Species)
 #####################################################
 #Selectivity and Available Resource
 #####################################################
@@ -459,26 +577,15 @@ fltransects$mergeID<-paste(fltransects$GPS_ID,fltransects$month,sep="_")
 table(fltransects$mergeID %in% gps$mergeID)
 table(fltransects$GPS_ID %in% gps$GPS_ID)
 
-mergdat<-merge(fltransects,gps,by="mergeID")
-
-firstpass<-mergdat[-which(duplicated(mergdat[,1:48])),]
-
-first
-table(firstpass$Date)
-dim(firstpass)
-
-dim(fltransects)
-
-
-table(fltransects$Date)
-#which dates are missing
-table(fltransects[which(!fltransects$mergeID %in% firstpass$mergeID),]$Date)
+fltransects<-merge(fltransects,gps,by="mergeID")
 
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
 selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
-x<-selective.matrix[g,]
+
+  #grab row
+  x<-selective.matrix[g,]
 
 #Get the hummingbird index
 flIndex<-vid.s[[x$Species]]
@@ -486,6 +593,8 @@ flIndex<-vid.s[[x$Species]]
 #Which species does the bird feed on
 fl.sp<-flIndex$Iplant_Double
 
+  flower.avail<-fltransects[fltransects$Iplant_Double %in% fl.sp & fltransects$month %in% which(month.abb==x$MonthA) & (fltransects$ele > x[["Elevation"]]-100 &fltransects$ele < x[["Elevation"]]+ 100) ,]
+  
 #How many of those flowers are within the elevation gradient at that month?
 #within the 400m gradient
 
