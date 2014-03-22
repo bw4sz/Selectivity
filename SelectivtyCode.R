@@ -44,6 +44,7 @@ colnames(vid_totals_date)<-c("Elevation","Date","Replicate(O_R)","High Feeder","
 
 print(vid_totals_date)
 
+#no unknown species
 dat<-dat[!dat$Species %in% "UKWN",]
 
 #Create time columns
@@ -104,27 +105,6 @@ ggplot(Mean_Time_Species,aes(Species,seconds(Mean_Time))) + geom_bar()  + theme_
 ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw()
 ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
 
-
-##Time since last feeding event by another species
-#add some qualifiers to make sure it is the same time and day
-dat$TimeSince<-NULL
-
-for(x in 2:nrow(dat)){
-  if(!dat[x,"Species"] == dat[x-1,"Species"] & dat[x,"Video"]==dat[x-1,"Video"] & dat[x,"Treatment"] == dat[x-1,"Treatment"]){
-    ti<-dat[x,]$Time.Begin - dat[x-1,]$Time.End 
-    dat[x,"TimeSince"]<-minutes(ti)+seconds(ti)/60
-  } else (dat[x,"TimeSince"]<-NA)
-  }
-
-#Does the time since another species feeding have an effect on high versus low value feeder choice
-
-conTime<-melt(table(dat$TimeSince<1,dat$Treatment))
-
-ggplot(conTime,aes(Var.1,fill=Var.2,y=value)) + geom_bar(position="dodge") + xlab("Bird feeding within 1 min") + labs(fill="Treatment")
-
-ggplot(dat,aes(TimeSince > 1,(Treatment=="H"))) + geom_bar(...count) 
-+ geom_smooth(family="binomial",method="glm") + facet_wrap(~Elevation)
-
 #############################################
 #Selectivity Analysis
 #############################################
@@ -142,6 +122,39 @@ levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
 
 #Only use trials that have a high and low, ie levels=2
 complete.trial<- Trials[levels.trial ==2]
+
+#time since feeding events
+order.trials<-rbind.fill(lapply(1:length(complete.trial),function(g){
+  #within feeding events
+  tr<-complete.trial[[g]]
+  
+  order.x<-tr[order(tr$Time.Begin),]
+  order.x$TimeSince<-NULL
+  
+  for(x in 2:nrow(order.x)){
+    if(!order.x[x,"Species"] == order.x[x-1,"Species"]){
+      ti<-order.x[x,]$Time.Begin - order.x[x-1,]$Time.End 
+      order.x[x,"TimeSince"]<-minutes(ti)+seconds(ti)/60
+    } else (order.x[x,"TimeSince"]<-NA)
+  }
+  
+  order.trials$Mass_diff<-NULL
+  for(x in 2:nrow(order.x)){
+    a<-order.x[x,"Species"]
+    b<-order.x[x-1,"Species"]
+    
+    massA<-hum.morph[hum.morph$English %in% a, "Mass"]
+    massB<-hum.morph[hum.morph$English %in% b, "Mass"]
+    
+    massDiff<-massB - massA
+    if(length(massDiff) == 0){order.x[x,"Mass_diff"]<-NA} else{
+      order.x[x,"Mass_diff"]<-massDiff
+    }
+  }
+  return(order.x)
+}))
+
+ggplot(order.trials,aes(x=Mass_diff,y=as.numeric(Treatment)-1)) + geom_point() + geom_smooth(family="binomial",method="glm",aes(weight=minutes(Time_Feeder_Obs) + seconds(Time_Feeder_Obs)))
 
 ####Within trial metrics per species
 
@@ -203,18 +216,7 @@ selective.matrix$Minutes_Total<-selective.matrix$Minutes_Low+selective.matrix$Mi
 #Add month column
 selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%Y"),"%b")
 
-#I think i the weighted regression is weird, just take out data where the bird fed less than 
-
-# plot(ecdf(selective.matrix$Minutes_Total))
-# 
-# ecdf(selective.matrix$Minutes_Total) (1)
-# 
-# hist(selective.matrix$Minutes_Total,breaks=seq(0,40,.5))
-# hist(selective.matrix$Minutes_High,breaks=seq(0,40,.5))
-# hist(selective.matrix$Minutes_Low,breaks=seq(0,40,.5))
-
-#Take out birds feeding less than 1min over the 6hours
-selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
+#selective.matrix<-selective.matrix[selective.matrix$Minutes_Total > 1,]
 
 #Optimal foraging says that individuals should occupy patches at a rate equal to their quality
 sH<-sum(selective.matrix$Minutes_High)
@@ -231,8 +233,10 @@ ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smo
 #By species
 ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + scale_x_continuous(breaks=seq(0,9,1)) + facet_wrap(~Species)
 
-#Effects of increasing visits on selectivity
-ggplot(selective.matrix,aes(x=Tvisits,y=Time_High)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total))
+#Total visits does not effect selectivity, just amount of total feeding
+ggplot(selective.matrix,aes(x=N,y=Minutes_High)) + geom_point() + stat_smooth(method="lm")
+ggplot(selective.matrix,aes(x=N,y=Minutes_Low)) + geom_point() + stat_smooth(method="lm")
+ggplot(selective.matrix,aes(x=N,y=Selectivity)) + geom_point() + stat_smooth(method="lm")
 
 #Effect of increasing time on the high value resource on number of other species.
 ggplot(selective.matrix,aes(x=visitsOthers,y=Selectivity)) + geom_point() + stat_smooth(method="lm") 
@@ -452,8 +456,12 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(group=1))
 massplot + facet_wrap(~Elevation)
+
+###Difference in weight between the last bird that fed and the high or low value feeder
+
+
 
 #################Repeat for PC1######################
 #####################################################
@@ -618,7 +626,7 @@ selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
   x<-selective.matrix[g,]
   
   #Get the hummingbird index
-  flIndex<-vid.s[[x$Species]]
+  flIndex<-vid.s[[as.character(x$Species)]]
   
   #Which species does the bird feed on
   fl.sp<-flIndex$Iplant_Double
@@ -630,14 +638,17 @@ selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
   flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & dateL & (fltransects$ele > x[["Elevation"]]-100 &fltransects$ele < x[["Elevation"]]+ 100) ,]
   if(nrow(flower.month)==0) return(NA)
   
-  mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mean)
+  mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mean,na.rm=TRUE)
   
   return(mean(mean.fl$x,na.rm=TRUE))})
 
-resourceplotS<-ggplot(selective.matrix,aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-resourceplotS+ facet_wrap(~Species,scales="free") 
 
-resourceplot<-ggplot(selective.matrix,aes(x=fl_s,y=Minutes_Total,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
+keep<-names(which(table(selective.matrix$Species) > 3))
+
+resourceplotS<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+resourceplotS+ facet_wrap(~Species) 
+
+resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=Minutes_Total,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
 resourceplot + facet_wrap(~Species,scales="free")
 
 ####PLot all three together
