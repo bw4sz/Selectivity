@@ -12,13 +12,13 @@ require(plotKML)
 require(maptools)
 
 #set gitpath
-gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+gitpath<-"C:/Users/Ben/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
+droppath<-"C:/Users/Ben/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -103,6 +103,27 @@ ggplot(Mean_Time_Species,aes(Species,seconds(Mean_Time))) + geom_bar()  + theme_
 
 ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw()
 ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
+
+
+##Time since last feeding event by another species
+#add some qualifiers to make sure it is the same time and day
+dat$TimeSince<-NULL
+
+for(x in 2:nrow(dat)){
+  if(!dat[x,"Species"] == dat[x-1,"Species"] & dat[x,"Video"]==dat[x-1,"Video"] & dat[x,"Treatment"] == dat[x-1,"Treatment"]){
+    ti<-dat[x,]$Time.Begin - dat[x-1,]$Time.End 
+    dat[x,"TimeSince"]<-minutes(ti)+seconds(ti)/60
+  } else (dat[x,"TimeSince"]<-NA)
+  }
+
+#Does the time since another species feeding have an effect on high versus low value feeder choice
+
+conTime<-melt(table(dat$TimeSince<1,dat$Treatment))
+
+ggplot(conTime,aes(Var.1,fill=Var.2,y=value)) + geom_bar(position="dodge") + xlab("Bird feeding within 1 min") + labs(fill="Treatment")
+
+ggplot(dat,aes(TimeSince > 1,(Treatment=="H"))) + geom_bar(...count) 
++ geom_smooth(family="binomial",method="glm") + facet_wrap(~Elevation)
 
 #############################################
 #Selectivity Analysis
@@ -220,6 +241,9 @@ ggplot(selective.matrix,aes(x=visitsOthers,y=Selectivity)) + geom_point() + stat
 require(GGally)
 ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Time_Feed","N","visitsOthers")])
 
+
+ggplot(selective.matrix,aes(x=Minutes_Total,y=Selectivity)) + geom_point()
+
 #######################################
 #Elevation and Selectivity Analysis
 #######################################
@@ -304,12 +328,11 @@ ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + g
 
 #Facet by elevation, color by replicate
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x")
+ggsave(paste(gitpath,"Figures/FullTrial.svg",sep=""),dpi=300,height=10,width=10)
 
 #aggregate by species
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
 colnames(wss)<-c("Species","PC1","PC2","weighted.selectivity")
-
-ggplot(selective.matrix[selective.matrix$Elevation==1500,],aes(x=Species,y=Selectivity,col=Date)) + geom_point(size=6) + facet_wrap(~Replicate)
 
 biplot(trait_pc)
 
@@ -376,7 +399,7 @@ distU<-apply(selective.matrix,1,function(x){
   
 })
 
-
+sapply(distU,nrow)
 selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
 
 #Selectivity and distance to range edge.
@@ -396,6 +419,9 @@ sp.lists<-sapply(complete.trial,function(x){
 mass.lists<-lapply(sp.lists,function(x){
   hum.morph[hum.morph$English %in% x, "Mass"]
 })
+
+
+#irect
 
 #For each row in the selectivity matrix, get the difference to the largest species
 
