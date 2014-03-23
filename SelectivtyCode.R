@@ -57,6 +57,9 @@ dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 #Get any rownumbers that are negative, these need to be fixed. 
 dat[which(dat$Time_Feeder_Obs < 0),]
 
+#only take morning shift to start with
+
+
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
 
@@ -67,13 +70,13 @@ S_H<-table(hours(dat$Time.Begin),dat$Species)
 #Create overall date stamp
 dat$Time_Stamp<-as.POSIXct(chron(dates=as.character(dat$Date),dat$Time.Begin))
 
-#Time and species occurence, facetted by elevation
-ggplot(dat,aes(x=strptime(dat$Time.Begin,"%H:%M"),fill=Species)) + geom_histogram(position="dodge") + facet_wrap(~Elevation)
-ggsave("Thesis//Maquipucuna_SantaLucia/Results/TimeofDayElevation.svg",height=11,width=8,dpi=300)
-
-#Overall Month_Day and Elevation
-ggplot(dat,aes(y=factor(Elevation),x=dat$Time_Stamp,col=Species)) + geom_point(size=3) + scale_x_datetime() + facet_wrap(~Species)
-ggsave("Thesis//Maquipucuna_SantaLucia/Results/DateElevation.svg",height=11,width=8,dpi=300)
+# #Time and species occurence, facetted by elevation
+# ggplot(dat,aes(x=strptime(dat$Time.Begin,"%H:%M"),fill=Species)) + geom_histogram(position="dodge") + facet_wrap(~Elevation)
+# ggsave("Thesis//Maquipucuna_SantaLucia/Results/TimeofDayElevation.svg",height=11,width=8,dpi=300)
+# 
+# #Overall Month_Day and Elevation
+# ggplot(dat,aes(y=factor(Elevation),x=dat$Time_Stamp,col=Species)) + geom_point(size=3) + scale_x_datetime() + facet_wrap(~Species)
+# ggsave("Thesis//Maquipucuna_SantaLucia/Results/DateElevation.svg",height=11,width=8,dpi=300)
 
 #Species richness and identity at each elevation
 sp_matrixHL<-(table(dat$Species,dat$Elevation,dat$Treatment) >= 1) * 1
@@ -138,7 +141,7 @@ order.trials<-rbind.fill(lapply(1:length(complete.trial),function(g){
     } else (order.x[x,"TimeSince"]<-NA)
   }
   
-  order.trials$Mass_diff<-NULL
+  order.x$Mass_diff<-NULL
   for(x in 2:nrow(order.x)){
     a<-order.x[x,"Species"]
     b<-order.x[x-1,"Species"]
@@ -154,7 +157,9 @@ order.trials<-rbind.fill(lapply(1:length(complete.trial),function(g){
   return(order.x)
 }))
 
+#Mass of most recent bird and feeder choice
 ggplot(order.trials,aes(x=Mass_diff,y=as.numeric(Treatment)-1)) + geom_point() + geom_smooth(family="binomial",method="glm",aes(weight=minutes(Time_Feeder_Obs) + seconds(Time_Feeder_Obs)))
+
 
 ####Within trial metrics per species
 
@@ -456,8 +461,8 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(group=1))
-massplot + facet_wrap(~Elevation)
+massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+massplot + facet_wrap(~Species)
 
 ###Difference in weight between the last bird that fed and the high or low value feeder
 
@@ -646,9 +651,9 @@ selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
 keep<-names(which(table(selective.matrix$Species) > 3))
 
 resourceplotS<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-resourceplotS+ facet_wrap(~Species) 
+resourceplotS+ facet_wrap(~Species,scales="free_x") 
 
-resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=Minutes_Total,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
+resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
 resourceplot + facet_wrap(~Species,scales="free")
 
 ####PLot all three together
