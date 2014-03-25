@@ -10,15 +10,16 @@ require(chron)
 require(reshape)
 require(plotKML)
 require(maptools)
+require(doSNOW)
 
 #set gitpath
-gitpath<-"C:/Users/Ben/Documents/Selectivity/"
+gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 setwd(droppath)
 
 ##Read in data
@@ -56,8 +57,6 @@ dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 
 #Get any rownumbers that are negative, these need to be fixed. 
 dat[which(dat$Time_Feeder_Obs < 0),]
-
-#only take morning shift to start with
 
 
 #average visits per hour
@@ -115,7 +114,6 @@ ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11
 #Create a species list for each video
 
 ####Match each trial together, trials are done on the same day at the same elevation
-
 
 #Split data into a list, with each compenent being one trial pair
 Trials<-split(dat, list(dat$Elevation,dat$Date,dat$Replicate),drop=TRUE)
@@ -248,7 +246,7 @@ ggplot(selective.matrix,aes(x=visitsOthers,y=Selectivity)) + geom_point() + stat
 
 #pairs plot
 require(GGally)
-ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Time_Feed","N","visitsOthers")])
+#ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Time_Feed","N","visitsOthers")])
 
 
 ggplot(selective.matrix,aes(x=Minutes_Total,y=Selectivity)) + geom_point()
@@ -430,8 +428,6 @@ mass.lists<-lapply(sp.lists,function(x){
 })
 
 
-#irect
-
 #For each row in the selectivity matrix, get the difference to the largest species
 
 #get the species with the max body size at the feeder during that trial
@@ -465,7 +461,6 @@ massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=Mas
 massplot + facet_wrap(~Species)
 
 ###Difference in weight between the last bird that fed and the high or low value feeder
-
 
 
 #################Repeat for PC1######################
@@ -625,7 +620,10 @@ fltransects[is.na(fltransects$ele),"ele"]<-apply(fltransects[is.na(fltransects$e
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
-selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
+cl<-makeCluster(7,"SOCK")
+registerDoSNOW(cl)
+selective.matrix$fl_s<-foreach(g=1:nrow(selective.matrix),.combine=c) %dopar%{
+#selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
   
   #grab row
   x<-selective.matrix[g,]
@@ -645,8 +643,8 @@ selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
   
   mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mean,na.rm=TRUE)
   
-  return(mean(mean.fl$x,na.rm=TRUE))})
-
+  return(mean(mean.fl$x,na.rm=TRUE))}
+stopCluster(cl)
 
 keep<-names(which(table(selective.matrix$Species) > 3))
 
