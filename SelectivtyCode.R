@@ -19,6 +19,7 @@ source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
 droppath<-"C:/Users/Ben/Dropbox/"
+
 setwd(droppath)
 
 ##Read in data
@@ -160,6 +161,8 @@ order.trials<-rbind.fill(lapply(1:length(complete.trial),function(g){
 #Mass of most recent bird and feeder choice
 ggplot(order.trials,aes(x=Mass_diff,y=as.numeric(Treatment)-1)) + geom_point() + geom_smooth(family="binomial",method="glm",aes(weight=minutes(Time_Feeder_Obs) + seconds(Time_Feeder_Obs)))
 
+#Average time since feeding
+ggplot(order.trials,aes(x=Species,TimeSince)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90))
 
 ####Within trial metrics per species
 
