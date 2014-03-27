@@ -652,7 +652,7 @@ resourceplotS<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(
 resourceplotS+ facet_wrap(~Species,scales="free_x") 
 
 resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
-resourceplot + facet_wrap(~Species,scales="free")
+resourceplot + facet_wrap(~Species,scales="free") 
 
 ####PLot all three together
 jpeg("Thesis/Selectivity/HypothesisPlot.jpeg",res=300,height=5,width=20,units="in")
