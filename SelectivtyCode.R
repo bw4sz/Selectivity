@@ -18,13 +18,8 @@ gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-<<<<<<< HEAD
-droppath<-"C:/Users/Jorge/Dropbox/"
-=======
 droppath<-"C:/Users/Ben/Dropbox/"
 
->>>>>>> 22eec432bff1d6331b0132fae10c0335ebb9b545
-setwd(droppath)
 
 ##Read in data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
