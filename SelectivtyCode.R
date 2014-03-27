@@ -11,7 +11,6 @@ require(reshape)
 require(plotKML)
 require(maptools)
 require(doSNOW)
-
 #set gitpath
 gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 
@@ -33,6 +32,13 @@ hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology
 
 dat<-dat[,1:12]
 
+#flower transect data
+#read in flower totals from FlowerTransects.R
+fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
+
+#Bring in video data
+vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
+
 #####################################
 #Step 2 - Data Cleaning and Sampling
 #####################################
@@ -49,8 +55,8 @@ print(vid_totals_date)
 dat<-dat[!dat$Species %in% "UKWN",]
 
 #Create time columns
-dat$Time.End<-times(dat$Time.End)
-dat$Time.Begin<-times(dat$Time.Begin)
+dat$Time.End<-chron::times(dat$Time.End)
+dat$Time.Begin<-chron::times(dat$Time.Begin)
 
 #Find time difference 
 dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
@@ -125,7 +131,7 @@ levels.trial<-lapply(Trials,function(x) nlevels(factor(x$Treatment)))
 complete.trial<- Trials[levels.trial ==2]
 
 #time since feeding events
-order.trials<-rbind.fill(lapply(1:length(complete.trial),function(g){
+complete.trials<-lapply(1:length(complete.trial),function(g){
   #within feeding events
   tr<-complete.trial[[g]]
   
@@ -153,7 +159,9 @@ order.trials<-rbind.fill(lapply(1:length(complete.trial),function(g){
     }
   }
   return(order.x)
-}))
+})
+
+order.trials<-rbind.fill(complete.trial)
 
 #Mass of most recent bird and feeder choice
 ggplot(order.trials,aes(x=Mass_diff,y=as.numeric(Treatment)-1)) + geom_point() + geom_smooth(family="binomial",method="glm",aes(weight=minutes(Time_Feeder_Obs) + seconds(Time_Feeder_Obs)))
@@ -189,12 +197,14 @@ Tdata<-lapply(complete.trial,function(x){
   tss<-data.frame(table(droplevels(x$Species)))
   colnames(tss)<-c("Species","N")
   
+  #time since last species visit. 
+  
   
   #merge data
   dat.trials<-merge(merge(merge(merge(merge(a,b),d),k),tss),visitsOthers)
   Elevation=unique(x$Elevation)
   Date=unique(x$Date)
-  Trichness<-length(a[minutes(times(a$Time_High + a$Time_Low)) > 1,]$Species)
+  Trichness<-length(a[minutes(chron::times(a$Time_High + a$Time_Low)) > 1,]$Species)
   Replicate=unique(x$Replicate)
   
   #Total visits
@@ -207,8 +217,8 @@ Tdata<-lapply(complete.trial,function(x){
 selective.matrix<-rbind.fill(Tdata)
 
 #Create times argument
-selective.matrix$Time_High<-times(selective.matrix$Time_High)
-selective.matrix$Time_Low<-times(selective.matrix$Time_Low)
+selective.matrix$Time_High<-chron::times(selective.matrix$Time_High)
+selective.matrix$Time_Low<-chron::times(selective.matrix$Time_Low)
 selective.matrix$Total_Time<-selective.matrix$Time_High + selective.matrix$Time_Low
 
 #add total minutes feeding as a weight
@@ -460,7 +470,43 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
 massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 massplot + facet_wrap(~Species)
 
-###Difference in weight between the last bird that fed and the high or low value feeder
+############
+#Selectivity and moving window of mass difference
+############
+
+
+#For each row in the selectivity matrix, get the difference to the largest species
+
+#get the species with the max body size at the feeder during that trial
+selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
+  
+  x<-selective.matrix[y,]
+  
+  #find the index in the list
+  index<-paste(paste(x["Elevation"],x[["Date"]],sep="."),x[["Replicate"]],sep=".")
+  
+  mass_T<-mass.lists[names(mass.lists) %in% index]
+  
+  
+  #weighted mass difference, the mass to all species
+  #multiple total time feeding by mass
+  
+  #get trial, with all species not included in the focal y row
+  trialT<-selective.matrix[selective.matrix$Elevation %in% x[["Elevation"]]& selective.matrix$Date %in% x[["Date"]] & selective.matrix$Replicate %in% x[["Replicate"]] & !selective.matrix$Species==x[["Species"]] ,]  
+  
+  #create the mass "environment" ie mean mass difference between the focal species and all competitors, weighted by time feeding.
+  #first get mass difference by each species and their time
+  diff<-x$Mass - trialT$Mass
+  
+  diff<-diff[is.finite(diff)]
+  #mean weighted differences
+  weight.diff<-weighted.mean(diff,trialT$Minutes_Total,na.rm=TRUE)
+  
+  return(weight.diff)})
+
+massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+massplot + facet_wrap(~Species,scales="free_x",nrow=2)
+ggsave(paste(gitpath,"Figures/Mass_Selectivity.jpeg",sep=""),height=9,width=11,units="in",dpi=300)
 
 
 #################Repeat for PC1######################
@@ -582,16 +628,10 @@ MultD + facet_wrap(~Species)
 #Selectivity and Available Resource
 #####################################################
 
-#read in flower totals from FlowerTransects.R
-fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
-
 #just summer data
 fltransects<-droplevels(fltransects[fltransects$month %in% c(6,7,8),])
 
 fltransects$GPS_ID<-as.numeric(as.character(fltransects$GPS_ID))
-
-#Bring in video data
-vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
 #just get videos from the summer months
 vid<-vid[vid$Month %in% c(6,7,8),]
@@ -606,15 +646,17 @@ gps$GPS_ID<-as.numeric(as.character(gps$GPS_ID))
 #GPSID + month
 gps$mergeID<-paste(gps$GPS_ID,gps$MonthID,sep="_")
 
+#remove duplicated
+gps_d<-gps[duplicated(gps,fromLast=TRUE),]
+
 fltransects$mergeID<-paste(fltransects$GPS_ID,fltransects$month,sep="_")
 
 table(fltransects$mergeID %in% gps$mergeID)
 table(fltransects$GPS_ID %in% gps$GPS_ID)
 
-fltransects<-merge(fltransects,gps,by="mergeID")
+fltransects<-merge(fltransects,gps_d,by="mergeID",all.x=TRUE)
 
 #where elevation failed, take the midpoint of the transect
-
 fltransects[is.na(fltransects$ele),"ele"]<-apply(fltransects[is.na(fltransects$ele),c("Elevation.Begin","Elevation.End")],1,mean)
 
 #Split videos into species lists
@@ -652,8 +694,12 @@ resourceplotS<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(
 resourceplotS+ facet_wrap(~Species,scales="free_x") 
 
 resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
-resourceplot + facet_wrap(~Species,scales="free") 
+resourceplot + facet_wrap(~Species,scales="free",nrow=2) + xlab("Available Resources (# of Flowers)") + ylab("Visits/hour") + labs("Elevation") + theme_bw()
+ggsave(paste(gitpath,"Figures/BPH_Resources.jpeg",sep=""),height=7,width=11,units="in",dpi=300)
 
+####For trapliners, we expect them to just interact with the feeder
+
+ggplot(selective.matrix,aes(bph,Selectivity)) + geom_point() + facet_wrap(~Species,scales="free") + geom_smooth(method="lm") + ylim(0,1)
 ####PLot all three together
 jpeg("Thesis/Selectivity/HypothesisPlot.jpeg",res=300,height=5,width=20,units="in")
 multiplot(resourceplot,massplot,rangeplot,cols=3)
