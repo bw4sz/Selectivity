@@ -18,7 +18,7 @@ gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 
 
 ##Read in data

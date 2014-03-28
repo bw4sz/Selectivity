@@ -5,7 +5,7 @@ require(reshape)
 require(chron)
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 
 vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
@@ -67,4 +67,44 @@ TimeS<-rbind.fill(lapply(split.vid,function(y){
 sp.Time<-aggregate(TimeS$TimeSame,list(vid$Hummingbird),function(x) {
   mean(x[is.finite(x)],na.rm=TRUE)
 })
+
+dat<-merge(dat,sp.Time,by.x="Row.names",by.y="Group.1")
+
+colnames(dat)<-c("Species","Visits","Flowers","TimeSame")
+
+rownames(dat)<-dat$Species
+
+#Quality of resources
+#read in data, see Nectar.R in maquipucuna repo.
+
+nectar<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/nectarmean.csv",sep=""),row.names=1)
+
+##average flower quality
+flowerQ<-sapply(colnames(a),function(x){
+  
+  #get column for that species
+  b<-a[,colnames(a) %in% x]
+  #just get the presence records
+  listb<-b[b>0]
+  
+  #create a dataframe
+  flowerframe<-data.frame(Iplant_Double=names(listb),Visits=listb)
+  
+  #merge brix column
+  flowerframeN<-merge(flowerframe,nectar)
+  
+  #weighted average
+  avgBR<-weighted.mean(flowerframeN$Brix,weights=flowerframe$Visits,na.rm=TRUE)
+  return(avgBR)
+})
+
+dat<-merge(dat,data.frame(flowerQ),by.x="Species",by.y="row.names")
+
+rownames(dat)<-dat$Species
+
+#multivariate analysis
+#remove none complete rows
+pca.dat<-dat[complete.cases(dat),]
+
+biplot(prcomp(pca.dat[,-c(1)],scale=TRUE))
 
