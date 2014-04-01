@@ -28,7 +28,7 @@ dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/Compet
 dat$Sex<-toupper(dat$Sex)
 
 #Bring in Hummingbird Morphology Dataset, comes from
-hum.morph<-read.csv("Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",row.names=1)
+hum.morph<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/HummingbirdMorphology.csv",sep=""),row.names=1)
 
 dat<-dat[,1:12]
 
@@ -346,7 +346,7 @@ ggplot(selective.matrix,aes(x=Species,Selectivity)) + geom_boxplot() + theme(axi
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2)
 
 #Facet by elevation, color by replicate
-ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x")
+ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x") + geom_point()
 ggsave(paste(gitpath,"Figures/FullTrial.svg",sep=""),dpi=300,height=10,width=10)
 
 #aggregate by species
@@ -469,8 +469,8 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-massplot + facet_wrap(~Species)
+massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(group=1))
+massplot + facet_wrap(~Species,scale="free_x") 
 
 ############
 #Selectivity and moving window of mass difference
@@ -550,7 +550,7 @@ selective.matrix$PC1D<-sapply(1:nrow(selective.matrix),function(y){
   return(weight.diff)})
 
 PC1D<-ggplot(selective.matrix,aes(x=PC1D,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-PC1D + facet_wrap(~Elevation)
+PC1D + facet_wrap(~Species,scales="free_x")
 
 
 #################Repeat for PC2######################
@@ -624,8 +624,8 @@ selective.matrix$MultD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diffW)})
 
-MultD<-ggplot(data=selective.matrix,aes(x=MultD,y=Selectivity,size=Minutes_Total,col=Species)) + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) + geom_point()
-MultD + facet_wrap(~Species)
+MultD<-ggplot(data=selective.matrix,aes(x=MultD,y=Selectivity,size=Minutes_Total,col=Species)) + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + geom_point()
+MultD + facet_wrap(~Species,scales="free_x")
 #####################################################
 #Selectivity and Available Resource
 #####################################################
@@ -690,12 +690,12 @@ selective.matrix$fl_s<-foreach(g=1:nrow(selective.matrix),.combine=c) %dopar%{
   return(mean(mean.fl$x,na.rm=TRUE))}
 stopCluster(cl)
 
-keep<-names(which(table(selective.matrix$Species) > 3))
+keep<-names(which(table(selective.matrix$Species) > 4))
 
 resourceplotS<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 resourceplotS+ facet_wrap(~Species,scales="free_x") 
 
-resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1))
+resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1,weight=Minutes_Total))
 resourceplot + facet_wrap(~Species,scales="free",nrow=2) + xlab("Available Resources (# of Flowers)") + ylab("Visits/hour") + labs("Elevation") + theme_bw()
 ggsave(paste(gitpath,"Figures/BPH_Resources.jpeg",sep=""),height=7,width=11,units="in",dpi=300)
 
