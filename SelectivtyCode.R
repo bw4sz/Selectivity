@@ -12,13 +12,13 @@ require(plotKML)
 require(maptools)
 require(doSNOW)
 #set gitpath
-gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+gitpath<-"C:/Users/Ben/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
+droppath<-"C:/Users/Ben/Dropbox/"
 
 
 ##Read in data
@@ -161,10 +161,10 @@ complete.trials<-lapply(1:length(complete.trial),function(g){
   return(order.x)
 })
 
-order.trials<-rbind.fill(complete.trial)
+order.trials<-rbind.fill(complete.trials)
 
 #Mass of most recent bird and feeder choice
-ggplot(order.trials,aes(x=Mass_diff,y=as.numeric(Treatment)-1)) + geom_point() + geom_smooth(family="binomial",method="glm",aes(weight=minutes(Time_Feeder_Obs) + seconds(Time_Feeder_Obs)))
+ggplot(order.trials,aes(x=Mass_diff,y=as.numeric(Treatment)-1)) + geom_point() + geom_smooth(family="binomial",method="glm",aes(weight=minutes(Time_Feeder_Obs) + seconds(Time_Feeder_Obs))) + facet_wrap(~Species)
 
 #Average time since feeding
 ggplot(order.trials,aes(x=Species,TimeSince)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90))
@@ -251,7 +251,8 @@ ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smo
 #Total visits does not effect selectivity, just amount of total feeding
 ggplot(selective.matrix,aes(x=N,y=Minutes_High)) + geom_point() + stat_smooth(method="lm")
 ggplot(selective.matrix,aes(x=N,y=Minutes_Low)) + geom_point() + stat_smooth(method="lm")
-ggplot(selective.matrix,aes(x=N,y=Selectivity)) + geom_point() + stat_smooth(method="lm")
+ggplot(selective.matrix,aes(x=N,y=Selectivity)) + geom_point() + ylim(0,1) + stat_smooth(method="lm") + facet_wrap(~Species,scales="free_x")
+ggsave(paste(gitpath,"Figures//Selectivity_Abundance.svg",sep=""),height=8,width=15)
 
 #Effect of increasing time on the high value resource on number of other species.
 ggplot(selective.matrix,aes(x=visitsOthers,y=Selectivity)) + geom_point() + stat_smooth(method="lm") 
@@ -295,11 +296,16 @@ zscore <- apply(hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Len
 rownames(zscore)<-hum.morph$English
 
 #Need to figure out what to do about Na's, we could use closely related species?
-trait_pc<-prcomp(na.omit(zscore))
+trait_pc<-prcomp(zscore)
+
+noprescale<-hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Length","Wing_Loading")]
+rownames(noprescale)<-hum.morph$English
+
+pc.noprescale<-prcomp(noprescale,scale=TRUE)
 
 #View Biplot of PC Space
 biplot(trait_pc)
-
+biplot(pc.noprescale)
 #distance in PCA space
 
 d.pca<-as.matrix(dist(trait_pc$x))
@@ -333,11 +339,11 @@ rownames(avgStat)<-avgStat$Species
 
 #take out any NA's
 avgStat<-avgStat[complete.cases(avgStat),]
-pcaStat<-prcomp(avgStat[,-1],scale=TRUE)
+pcaStat<-prcomp(avgStat[,-c(1)],scale=TRUE)
 biplot(pcaStat)
 
 ## Write selectivity tables to file
-write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
+#write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
 
 #Selectivity Descriptors for each species
 ggplot(selective.matrix,aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
@@ -354,6 +360,23 @@ wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Sp
 colnames(wss)<-c("Species","PC1","PC2","weighted.selectivity")
 
 biplot(trait_pc)
+
+##cca 
+
+#get the metrics from the feeders
+feeder<-avgStat[,-c(1)]
+traits<-hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Length","Wing_Loading")]
+rownames(traits)<-hum.morph$English
+
+trait.f<-traits[rownames(traits) %in% rownames(feeder),]
+
+#same order?
+trait.fs<-trait.f[sort(rownames(feeder)),]
+
+#correspondance analysis
+
+plot(rda(feeder[,],trait.fs[,c(1:7)],na.action=na.exclude))
+require(vegan)
 
 ggplot(wss,aes(x=PC2,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
 ggplot(wss,aes(x=PC1,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)

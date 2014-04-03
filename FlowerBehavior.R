@@ -5,7 +5,7 @@ require(reshape)
 require(chron)
 
 #Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
+droppath<-"C:/Users/Ben/Dropbox/"
 
 vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
@@ -108,3 +108,17 @@ pca.dat<-dat[complete.cases(dat),]
 
 biplot(prcomp(pca.dat[,-c(1)],scale=TRUE))
 
+###RDA with traits
+flowers<-pca.dat[,-c(1)]
+
+traits<-hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Length","Wing_Loading")]
+rownames(traits)<-hum.morph$English
+
+trait.f<-traits[rownames(traits) %in% rownames(flowers),]
+
+#same order?
+trait.fs<-trait.f[sort(rownames(flowers)),]
+
+#z
+
+plot(rda(flowers[,1:4],trait.fs,scale=TRUE))
