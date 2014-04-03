@@ -11,14 +11,17 @@ require(reshape)
 require(plotKML)
 require(maptools)
 require(doSNOW)
+require(vegan)
+
+
 #set gitpath
-gitpath<-"C:/Users/Ben/Documents/Selectivity/"
+gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 
 
 ##Read in data
@@ -63,7 +66,6 @@ dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 
 #Get any rownumbers that are negative, these need to be fixed. 
 dat[which(dat$Time_Feeder_Obs < 0),]
-
 
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
@@ -261,7 +263,6 @@ ggplot(selective.matrix,aes(x=visitsOthers,y=Selectivity)) + geom_point() + stat
 require(GGally)
 #ggpairs(selective.matrix[,c("Selectivity","bph","avgF","Time_Feed","N","visitsOthers")])
 
-
 ggplot(selective.matrix,aes(x=Minutes_Total,y=Selectivity)) + geom_point()
 
 #######################################
@@ -298,14 +299,8 @@ rownames(zscore)<-hum.morph$English
 #Need to figure out what to do about Na's, we could use closely related species?
 trait_pc<-prcomp(zscore)
 
-noprescale<-hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Length","Wing_Loading")]
-rownames(noprescale)<-hum.morph$English
-
-pc.noprescale<-prcomp(noprescale,scale=TRUE)
-
 #View Biplot of PC Space
 biplot(trait_pc)
-biplot(pc.noprescale)
 #distance in PCA space
 
 d.pca<-as.matrix(dist(trait_pc$x))
@@ -339,7 +334,7 @@ rownames(avgStat)<-avgStat$Species
 
 #take out any NA's
 avgStat<-avgStat[complete.cases(avgStat),]
-pcaStat<-prcomp(avgStat[,-c(1)],scale=TRUE)
+pcaStat<-prcomp(avgStat[,-c(1,2)],scale=TRUE)
 biplot(pcaStat)
 
 ## Write selectivity tables to file
@@ -365,19 +360,33 @@ biplot(trait_pc)
 
 #get the metrics from the feeders
 feeder<-avgStat[,-c(1)]
-traits<-hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Length","Wing_Loading")]
+#traits<-hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Length","Wing_Loading")]
+
+traits<-hum.morph[,c("Bill","Mass","Bill_width","WingChord","Nail_Length","Foot_Extension")]
 rownames(traits)<-hum.morph$English
 
 trait.f<-traits[rownames(traits) %in% rownames(feeder),]
 
 #same order?
 trait.fs<-trait.f[sort(rownames(feeder)),]
+plot(rd.out<-rda(X=feeder[,],Y=trait.fs[],scale=TRUE))
+summary(rd.out)
+#break into species and elevation
 
-#correspondance analysis
+# selective.agg<-aggregate(selective.matrix[,c("Selectivity","bph","Time_Feed")],list(selective.matrix$Elevation,selective.matrix$Species),mean,na.rm=TRUE)
+# selective.split<-split(selective.agg,list(selective.agg$Group.1))
+# 
+# feeder<-selective.split[[2]]
+# 
+# rownames(feeder)<-feeder$Group.2
+# trait.f<-traits[rownames(traits) %in% rownames(feeder),]
+# 
+# #same order?
+# trait.fs<-trait.f[sort(rownames(feeder)),]
+# plot(rda(feeder[,-c(1,2)],trait.fs))
 
-plot(rda(feeder[,],trait.fs[,c(1:7)],na.action=na.exclude))
-require(vegan)
 
+##############
 ggplot(wss,aes(x=PC2,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
 ggplot(wss,aes(x=PC1,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
 

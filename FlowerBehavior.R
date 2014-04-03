@@ -5,7 +5,7 @@ require(reshape)
 require(chron)
 
 #Set working directory
-droppath<-"C:/Users/Ben/Dropbox/"
+droppath<-"C:/Users/Jorge/Dropbox/"
 
 vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
 
@@ -121,4 +121,7 @@ trait.fs<-trait.f[sort(rownames(flowers)),]
 
 #z
 
-plot(rda(flowers[,1:4],trait.fs,scale=TRUE))
+ord<-rda(flowers[,-1] ~ Mass + Bill + Wing_Loading + Tarsus_Length,data=trait.fs,scale=TRUE)
+plot(ord)
+anova(ord)
+summary(ord)
