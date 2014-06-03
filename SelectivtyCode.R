@@ -348,9 +348,9 @@ ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=Species,Selec
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2)
 
 #Facet by elevation, color by replicate
-ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x") + geom_point()
-ggsave(paste(gitpath,"Figures/FullTrial.svg",sep=""),dpi=300,height=10,width=10)
-ggsave(paste(gitpath,"Figures/FullTrial.jpeg",sep=""),dpi=300,height=10,width=10)
+ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme_bw() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x") + geom_point()
+ggsave(paste(gitpath,"Figures/FullTrial.svg",sep=""),dpi=300,height=6,width=10)
+ggsave(paste(gitpath,"Figures/FullTrial.jpeg",sep=""),dpi=300,height=7,width=11)
 
 #aggregate by species
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
@@ -729,17 +729,16 @@ selective.matrix[,c("fl_all", "fl_s")]<-foreach(g=1:nrow(selective.matrix),.comb
   return(c(mean.fl_all,mean.fl))}
 stopCluster(cl)
 
-flowerplot<-melt(id.var=c("Species","Selectivity","Elevation","Minutes_Total"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
+flowerplot<-melt(id.var=c("Species","Selectivity","Elevation","Minutes_Total","bph"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
 
-resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=variable),se=FALSE)
 resourceplotS+ facet_wrap(~Species,scales="free_x") + labs(x="Available Resources") + theme_bw()
 
 ggsave(paste(gitpath,"Figures/Selectivity_Resources.jpeg",sep=""),height=7,width=11,units="in",dpi=300)
 
-
-resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1,weight=Minutes_Total))
-resourceplot + facet_wrap(~Species,scales="free",nrow=2) + xlab("Available Resources (# of Flowers)") + ylab("Visits/hour") + labs("Elevation") + theme_bw()
-ggsave(paste(gitpath,"Figures/BPH_Resources.jpeg",sep=""),height=7,width=11,units="in",dpi=300)
+resourceplot<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,y=bph,col=variable,linetype=variable)) + geom_point() + stat_smooth(method="lm",aes(group=variable,weight=Minutes_Total),size=1,se=FALSE)
+resourceplot + facet_wrap(~Species,scales="free",nrow=2) + xlab("Available Resources (# of Flowers)") + ylab("Visits/hour") + labs("Elevation") + theme_bw() + scale_color_discrete(name="Available Resources",labels=c("Species Only","All")) + scale_linetype_discrete(guide=FALSE)
+ggsave(paste(gitpath,"Figures/BPH_Resources.jpeg",sep=""),height=5,width=17,units="in",dpi=300)
 
 ####For trapliners, we expect them to just interact with the feeder
 
@@ -750,3 +749,48 @@ multiplot(resourceplot,massplot,rangeplot,cols=3)
 dev.off()
 
 
+##############AIC model fit selectivity#################
+
+#Just use species for which we have complete info to compare model fits
+
+mod_data<-selective.matrix[selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","MultD","fl_all")]), ]
+
+##Compute model fits
+
+#Intercept only
+m_intercept<-glm(data=mod_data,Selectivity~1,family="binomial",weights=mod_data$Minutes_Total)
+
+#By Species
+m_species<-glm(data=mod_data,Selectivity~Species,family="binomial",weights=mod_data$Minutes_Total)
+
+#By Mass
+m_mass<-glm(data=mod_data,Selectivity~Mass:Species,family="binomial",weights=mod_data$Minutes_Total)
+
+#By Difference in Mass
+m_massD<-glm(data=mod_data,Selectivity~MassD:Species,family="binomial",weights=mod_data$Minutes_Total)
+
+#By multivariate distance
+m_multD<-glm(data=mod_data,Selectivity~MultD:Species,family="binomial",weights=mod_data$Minutes_Total)
+
+#By Elevation
+m_Elevation<-glm(data=mod_data,Selectivity~Elevation:Species,family="binomial",weights=mod_data$Minutes_Total)
+
+#By available resources, all
+m_Allresources<-glm(data=mod_data,Selectivity~fl_all,family="binomial",weights=mod_data$Minutes_Total)
+
+#By available resources, by species
+m_Speciesresources<-glm(data=mod_data,Selectivity~fl_s:Species,family="binomial",weights=mod_data$Minutes_Total)
+
+
+mods<-list(m_species,m_mass,m_massD,m_Elevation,m_Allresources)
+aictable<-AIC(m_intercept,m_species,m_mass,m_massD,m_multD,m_Elevation,m_Allresources,m_Speciesresources)
+aictable[order(aictable$AIC),]
+
+capture.output(aictable,file="Figures/AIC.xls")
+
+
+at<-anova(m_intercept,m_species,m_mass,m_massD,m_multD,m_Elevation,m_Allresources,m_Speciesresources,test="Chisq")
+summary(at)
+
+#write table to file
+capture.output(at,file="Figures/Anova.xls")
