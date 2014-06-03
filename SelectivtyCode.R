@@ -12,6 +12,7 @@ require(plotKML)
 require(maptools)
 require(doSNOW)
 require(vegan)
+require(plyr)
 
 
 #set gitpath
@@ -23,8 +24,7 @@ source(paste(gitpath,"functions.R",sep=""))
 #Set working directory
 droppath<-"C:/Users/Jorge/Dropbox/"
 
-
-##Read in data
+#Read in data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
 
 #Make all entries capital
@@ -110,7 +110,6 @@ ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("M
 #mean time feeding bout
 Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
 colnames(Mean_Time_Species)<-c("Species","Mean_Time")
-ggplot(Mean_Time_Species,aes(Species,seconds(Mean_Time))) + geom_bar()  + theme_bw() + theme(axis.text.x=element_text(angle=-90)) + ylab("Average Seconds Feeding")
 
 ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw()
 ggsave(paste(gitpath,"Figures/Feedingtime.svg",sep=""),dpi=300,height=8,width=11)
@@ -202,8 +201,7 @@ Tdata<-lapply(complete.trial,function(x){
   colnames(tss)<-c("Species","N")
   
   #time since last species visit. 
-  
-  
+    
   #merge data
   dat.trials<-merge(merge(merge(merge(merge(a,b),d),k),tss),visitsOthers)
   Elevation=unique(x$Elevation)
@@ -244,6 +242,9 @@ print(sH/sL)
 
 #Competition keeps birds from occupying higher quality patch
 
+#set minimal number of datapoints. 
+keep<-names(which(table(selective.matrix$Species) > 3))
+
 #Effect of increasing richness on selectivity
 ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + scale_x_continuous(breaks=seq(0,9,1))
 
@@ -278,10 +279,6 @@ ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),hei
 p<-ggplot(selective.matrix,aes(x=as.numeric(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
 p  + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
-
-#multimodal?
-p<-ggplot(selective.matrix,aes(x=as.numeric(Elevation),Selectivity,col=Species,size=Minutes_Total)) + geom_point() + facet_wrap(~Species)
-p  + stat_smooth(method="glm",formula=(y~(poly(x,2))),family="binomial",aes(weight=Minutes_Total)) + theme_bw() + xlab("Elevation") + scale_x_continuous(breaks=as.numeric(levels(factor(dat$Elevation))))
 
 #######################################
 #Morphology and Selectivity Analysis
@@ -334,14 +331,18 @@ rownames(avgStat)<-avgStat$Species
 
 #take out any NA's
 avgStat<-avgStat[complete.cases(avgStat),]
-pcaStat<-prcomp(avgStat[,-c(1,2)],scale=TRUE)
+
+#take out species without enough data
+avgStat<-avgStat[avgStat$Species %in% keep,]
+
+pcaStat<-prcomp(avgStat[,-c(1)],scale=TRUE)
 biplot(pcaStat)
 
 ## Write selectivity tables to file
 #write.csv(selective.matrix,paste(droppath,"Thesis//Maquipucuna_SantaLucia/Results/Selectivity/Selectivity_Elevation.csv",sep=""))
 
 #Selectivity Descriptors for each species
-ggplot(selective.matrix,aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=Species,Selectivity)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
 
 #Facet by elevation
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2)
@@ -349,6 +350,7 @@ ggplot(selective.matrix,aes(x=Species,Selectivity,col=as.factor(Elevation))) + g
 #Facet by elevation, color by replicate
 ggplot(selective.matrix,aes(x=Species,Selectivity,col=Replicate)) + geom_boxplot() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_grid(MonthA~Elevation,scale="free_x") + geom_point()
 ggsave(paste(gitpath,"Figures/FullTrial.svg",sep=""),dpi=300,height=10,width=10)
+ggsave(paste(gitpath,"Figures/FullTrial.jpeg",sep=""),dpi=300,height=10,width=10)
 
 #aggregate by species
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
@@ -390,12 +392,13 @@ summary(rd.out)
 ggplot(wss,aes(x=PC2,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
 ggplot(wss,aes(x=PC1,y=weighted.selectivity)) + geom_point() + geom_smooth(method="glm",family="binomial") + geom_text(aes(label=Species),size=2)
 
-p<-ggplot(selective.matrix,aes(x=PC1,y=Selectivity,size=Minutes_Total,label=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total))
+p<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=PC1,y=Selectivity,size=Minutes_Total,label=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total))
 p
 
-p<-ggplot(selective.matrix,aes(x=PC2,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
+p<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=PC2,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
 p
 
+p<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=Mass,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",link="binomial",aes(weight=Minutes_Total,group=1))
 
 #redundancy analysis and behavioral descriptors
 
@@ -407,6 +410,7 @@ p
 #########################################################
 #Selectivity as function of distance to nearest range edge
 ##########################################################
+
 
 #Bring in transect data, see Maquipucuna Repo
 transect<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia//Results//HummingbirdTransects//HumTransectRows.csv",sep=""),row.names=1)
@@ -437,8 +441,8 @@ distU<-apply(selective.matrix,1,function(x){
   #If species doesn't exist in transect, skip
   if(sum(rangeLim$Species %in% x["Species"])==0) {
     r<-NA
-    names(r)<-NA
-    return(r)
+
+    return(data.frame(UP=NA, RDist=r))
   }
   
   maxR<-abs(as.numeric(x["Elevation"]) - as.numeric(rangeLim[rangeLim$Species %in% x["Species"],]$Max))
@@ -447,10 +451,9 @@ distU<-apply(selective.matrix,1,function(x){
   
   if(maxR < minR) {return(data.frame(UP="Dist_Upper",RDist=maxR))}
   if(minR < maxR) {return(data.frame(UP="Dist_Lower",RDist=minR))}
-  
+  if(minR == maxR){data.frame(UP=NA, RDist=NA)}
 })
 
-sapply(distU,nrow)
 selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
 
 #Selectivity and distance to range edge.
@@ -501,7 +504,7 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-massplot<-ggplot(selective.matrix,aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(group=1))
+massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(group=1))
 massplot + facet_wrap(~Species,scale="free_x") 
 
 ############
@@ -538,9 +541,9 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-massplot + facet_wrap(~Species,scales="free_x",nrow=2)
-ggsave(paste(gitpath,"Figures/Mass_Selectivity.jpeg",sep=""),height=9,width=11,units="in",dpi=300)
+massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1),legend=FALSE)
+massplot + facet_wrap(~Species,scales="free_x",nrow=2) + theme_bw()
+ggsave(paste(gitpath,"Figures/Mass_Selectivity.jpeg",sep=""),height=8,width=12,units="in",dpi=300)
 
 
 #################Repeat for PC1######################
@@ -581,7 +584,7 @@ selective.matrix$PC1D<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-PC1D<-ggplot(selective.matrix,aes(x=PC1D,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+PC1D<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=PC1D,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 PC1D + facet_wrap(~Species,scales="free_x")
 
 
@@ -624,8 +627,8 @@ selective.matrix$PC2D<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-PC2D<-ggplot(selective.matrix,aes(x=PC2D,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-PC2D + facet_grid(MonthA~Elevation)
+PC2D<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=PC2D,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+PC2D + facet_wrap(~Species,scales="free_x")
 
 #################Multivariate distance######################
 #####################################################
@@ -656,7 +659,7 @@ selective.matrix$MultD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diffW)})
 
-MultD<-ggplot(data=selective.matrix,aes(x=MultD,y=Selectivity,size=Minutes_Total,col=Species)) + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + geom_point()
+MultD<-ggplot(data=selective.matrix[selective.matrix$Species %in% keep,],aes(x=MultD,y=Selectivity,size=Minutes_Total,col=Species)) + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total)) + geom_point()
 MultD + facet_wrap(~Species,scales="free_x")
 #####################################################
 #Selectivity and Available Resource
@@ -696,10 +699,9 @@ fltransects[is.na(fltransects$ele),"ele"]<-apply(fltransects[is.na(fltransects$e
 #Split videos into species lists
 vid.s<-split(vid,list(vid$Hummingbird))
 
-cl<-makeCluster(7,"SOCK")
+cl<-makeCluster(4,"SOCK")
 registerDoSNOW(cl)
-selective.matrix$fl_s<-foreach(g=1:nrow(selective.matrix),.combine=c) %dopar%{
-#selective.matrix$fl_s<-sapply(1:nrow(selective.matrix),function(g){
+selective.matrix[,c("fl_all", "fl_s")]<-foreach(g=1:nrow(selective.matrix),.combine=rbind) %do%{
   
   #grab row
   x<-selective.matrix[g,]
@@ -711,21 +713,29 @@ selective.matrix$fl_s<-foreach(g=1:nrow(selective.matrix),.combine=c) %dopar%{
   fl.sp<-flIndex$Iplant_Double
   
   #dates within two weeks either side. 
-  
   dateL<-abs(difftime(as.POSIXlt(x[["Date"]],format="%m/%d/%Y"),  as.POSIXlt(fltransects$Date,format="%m/%d/%Y"),units="weeks")) <= 2
   
-  flower.month<-fltransects[fltransects$Iplant_Double %in% fl.sp & dateL & (fltransects$ele > x[["Elevation"]]-100 &fltransects$ele < x[["Elevation"]]+ 100) ,]
+  flower.month<-fltransects[dateL & (fltransects$ele > x[["Elevation"]]-100 &fltransects$ele < x[["Elevation"]]+ 100) ,]
   if(nrow(flower.month)==0) return(NA)
   
-  mean.fl<-aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),mean,na.rm=TRUE)
+  mean.fl_all<-mean(aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),sum,na.rm=TRUE)$x)
+    
+  flower_sp<-flower.month[flower.month$Iplant_Double %in% fl.sp,]
   
-  return(mean(mean.fl$x,na.rm=TRUE))}
+  if(nrow(flower_sp)==0) return(NA)
+  
+  mean.fl<-mean(aggregate(flower_sp$Total_Flowers,list(flower_sp$Transect.ID),sum,na.rm=TRUE)$x)
+  
+  return(c(mean.fl_all,mean.fl))}
 stopCluster(cl)
 
-keep<-names(which(table(selective.matrix$Species) > 4))
+flowerplot<-melt(id.var=c("Species","Selectivity","Elevation","Minutes_Total"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
 
-resourceplotS<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
-resourceplotS+ facet_wrap(~Species,scales="free_x") 
+resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
+resourceplotS+ facet_wrap(~Species,scales="free_x") + labs(x="Available Resources") + theme_bw()
+
+ggsave(paste(gitpath,"Figures/Selectivity_Resources.jpeg",sep=""),height=7,width=11,units="in",dpi=300)
+
 
 resourceplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph,col=factor(Elevation))) + geom_point() + stat_smooth(method="lm",aes(group=1,weight=Minutes_Total))
 resourceplot + facet_wrap(~Species,scales="free",nrow=2) + xlab("Available Resources (# of Flowers)") + ylab("Visits/hour") + labs("Elevation") + theme_bw()
@@ -738,10 +748,5 @@ ggplot(selective.matrix,aes(bph,Selectivity)) + geom_point() + facet_wrap(~Speci
 jpeg("Thesis/Selectivity/HypothesisPlot.jpeg",res=300,height=5,width=20,units="in")
 multiplot(resourceplot,massplot,rangeplot,cols=3)
 dev.off()
-
-# ############Quick look at temperature and elevation
-# require(scales)
-# ggplot(dat,aes(x=chron(Time.Begin),y=Temp,col=factor(Elevation))) + geom_smooth(se=FALSE) + scale_x_chron(format="%H")
-
 
 
