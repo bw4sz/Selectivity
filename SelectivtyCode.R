@@ -13,7 +13,7 @@ require(maptools)
 require(doSNOW)
 require(vegan)
 require(plyr)
-
+require(rms)
 
 #set gitpath
 gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
@@ -197,9 +197,7 @@ Tdata<-lapply(complete.trial,function(x){
   
   visitsOthers<-data.frame(Species=names(visitsOthers),visitsOthers)
   
-  tss<-data.frame(table(droplevels(x$Species)))
-  colnames(tss)<-c("Species","N")
-  
+
   #time since last species visit. 
     
   #merge data
@@ -254,7 +252,7 @@ ggplot(selective.matrix,aes(x=Richness,y=Selectivity)) + geom_point() + stat_smo
 #Total visits does not effect selectivity, just amount of total feeding
 ggplot(selective.matrix,aes(x=N,y=Minutes_High)) + geom_point() + stat_smooth(method="lm")
 ggplot(selective.matrix,aes(x=N,y=Minutes_Low)) + geom_point() + stat_smooth(method="lm")
-ggplot(selective.matrix,aes(x=N,y=Selectivity)) + geom_point() + ylim(0,1) + stat_smooth(method="lm") + facet_wrap(~Species,scales="free_x")
+ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=N,y=Selectivity)) + geom_point() + ylim(0,1) + stat_smooth(method="lm") + facet_wrap(~Species,scales="free_x")
 ggsave(paste(gitpath,"Figures//Selectivity_Abundance.svg",sep=""),height=8,width=15)
 
 #Effect of increasing time on the high value resource on number of other species.
@@ -320,13 +318,13 @@ ws<-sapply(split(selective.matrix,selective.matrix$Species),function(x){
 selective.matrix<-merge(selective.matrix,data.frame(weighted.selectivity=ws),by.x="Species",by.y="row.names")
 
 #average metrics across species
-avgStat<-aggregate(selective.matrix[,c("avgF","bph","Time_Feed","N.x")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
+avgStat<-aggregate(selective.matrix[,c("avgF","bph","Time_Feed")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
 
 colnames(avgStat)[1]<-"Species"
 
 #merge with weighted selectivity
 avgStat<-merge(ws,avgStat,by.x="row.names",by.y="Species")
-colnames(avgStat)<-c("Species","W.Selectivity","avgF","bph","Time_Feed","N")
+colnames(avgStat)<-c("Species","W.Selectivity","avgF","bph","Time_Feed")
 rownames(avgStat)<-avgStat$Species
 
 #take out any NA's
@@ -371,8 +369,13 @@ trait.f<-traits[rownames(traits) %in% rownames(feeder),]
 
 #same order?
 trait.fs<-trait.f[sort(rownames(feeder)),]
-plot(rd.out<-rda(X=feeder[,],Y=trait.fs[],scale=TRUE))
+
+pdf("Figures/RDA.pdf")
+plot(rd.out<-rda(X=feeder[,],Y=trait.fs[],scale=TRUE,),scaling=1)
+dev.off()
 summary(rd.out)
+
+
 #break into species and elevation
 
 # selective.agg<-aggregate(selective.matrix[,c("Selectivity","bph","Time_Feed")],list(selective.matrix$Elevation,selective.matrix$Species),mean,na.rm=TRUE)
@@ -776,10 +779,14 @@ m_multD<-glm(data=mod_data,Selectivity~MultD:Species,family="binomial",weights=m
 m_Elevation<-glm(data=mod_data,Selectivity~Elevation:Species,family="binomial",weights=mod_data$Minutes_Total)
 
 #By available resources, all
-m_Allresources<-glm(data=mod_data,Selectivity~fl_all,family="binomial",weights=mod_data$Minutes_Total)
+m_Allresources<-glm(data=mod_data,Selectivity~fl_all:Species,family="binomial",weights=mod_data$Minutes_Total)
 
 #By available resources, by species
 m_Speciesresources<-glm(data=mod_data,Selectivity~fl_s:Species,family="binomial",weights=mod_data$Minutes_Total)
+
+#rsquared for best model
+
+1-m_Speciesresources$deviance/m_Speciesresources$null.deviance
 
 
 mods<-list(m_species,m_mass,m_massD,m_Elevation,m_Allresources)
@@ -788,8 +795,10 @@ aictable[order(aictable$AIC),]
 
 capture.output(aictable,file="Figures/AIC.xls")
 
+#Psuedo Rsquared
+1-m_Speciesresources$deviance/m_Speciesresources$null.deviance
 
-at<-anova(m_intercept,m_species,m_mass,m_massD,m_multD,m_Elevation,m_Allresources,m_Speciesresources,test="Chisq")
+at<-anova(m_intercept,m_species,m_mass,m_massD,m_multD,m_Elevation,m_Allresources,m_Speciesresources,test=c("Chisq"))
 summary(at)
 
 #write table to file
