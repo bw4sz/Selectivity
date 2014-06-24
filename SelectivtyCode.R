@@ -16,13 +16,13 @@ require(plyr)
 require(rms)
 
 #set gitpath
-gitpath<-"C:/Users/Jorge/Documents/Selectivity/"
+gitpath<-"C:/Users/Ben/Documents/Selectivity/"
 
 #source functions
 source(paste(gitpath,"functions.R",sep=""))
 
 #Set working directory
-droppath<-"C:/Users/Jorge/Dropbox/"
+droppath<-"C:/Users/Ben/Dropbox/"
 
 #Read in data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
@@ -318,13 +318,13 @@ ws<-sapply(split(selective.matrix,selective.matrix$Species),function(x){
 selective.matrix<-merge(selective.matrix,data.frame(weighted.selectivity=ws),by.x="Species",by.y="row.names")
 
 #average metrics across species
-avgStat<-aggregate(selective.matrix[,c("avgF","bph","Time_Feed")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
+avgStat<-aggregate(selective.matrix[,c("bph")],by=list(selective.matrix$Species),mean,na.rm=TRUE)
 
 colnames(avgStat)[1]<-"Species"
 
 #merge with weighted selectivity
 avgStat<-merge(ws,avgStat,by.x="row.names",by.y="Species")
-colnames(avgStat)<-c("Species","W.Selectivity","avgF","bph","Time_Feed")
+colnames(avgStat)<-c("Species","Weighted.Selectivity","Visits.per.hour")
 rownames(avgStat)<-avgStat$Species
 
 #take out any NA's
