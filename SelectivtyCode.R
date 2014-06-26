@@ -54,8 +54,16 @@ colnames(vid_totals_date)<-c("Elevation","Date","Replicate(O_R)","High Feeder","
 
 print(vid_totals_date)
 
+###General stats on sampling
+
+#Number of days
+paste("Number of days",nrow(vid_totals_date),sep=": ")
+
 #no unknown species
 dat<-dat[!dat$Species %in% "UKWN",]
+
+#One misspelling of green crowned brilliant
+levels(dat$Species)[levels(dat$Species) %in% "Green-crowned Brillaint"]<-"Green-crowned Brilliant"
 
 #Create time columns
 dat$Time.End<-chron::times(dat$Time.End)
@@ -70,7 +78,7 @@ dat[which(dat$Time_Feeder_Obs < 0),]
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
 
-#################################
+##################################
 #Species Presence and Time
 ##################################
 
@@ -100,12 +108,15 @@ rangefeed<-ggplot(m.sp_m,aes(y=Species,x=factor(Elevation),fill=as.factor(Presen
 rangefeed + labs(fill="Present",x="Elevation")
 ggsave(paste(gitpath,"Figures/RangeExtentFeeders.svg",sep=""),dpi=300,height=8,width=11)
 
-#Total Time per species
-Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),sum,na.rm=TRUE) 
-colnames(Total_Time_Species)<-c("Species","TotalTime")
+#Total Time per species per elevation
+Total_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species,dat$Elevation),sum,na.rm=TRUE) 
+colnames(Total_Time_Species)<-c("Species","Elevation","TotalTime")
 Total_Time_Species$Time<-minutes(Total_Time_Species$TotalTime)+seconds(Total_Time_Species$TotalTime)/60
 
-ggplot(Total_Time_Species,aes(Species,Time)) + geom_bar() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1))
+p<-ggplot(Total_Time_Species,aes(y=Species,as.factor(Elevation),fill=Time)) + geom_tile() + theme_bw() + ylab("Minutes on Feeders") + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + scale_fill_continuous(low="gray90",high="gray10")
+p+labs(x="Elevation",y="Species",fill="Minutes Feeding")
+ggsave(paste(gitpath,"Figures/TimeFeeding.pdf",sep=""),dpi=300,height=8,width=11)
+ggsave(paste(gitpath,"Figures/TimeFeeding.jpg",sep=""),dpi=300,height=8,width=11)
 
 #mean time feeding bout
 Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
@@ -269,8 +280,9 @@ ggplot(selective.matrix,aes(x=Minutes_Total,y=Selectivity)) + geom_point()
 #######################################
 
 #unweighted
-p<-ggplot(selective.matrix[],aes(x=as.numeric(Elevation),Selectivity,col=Species)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1),family="binomial")
-p
+p<-ggplot(selective.matrix[],aes(x=as.numeric(Elevation),Selectivity)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1),family="binomial")
+p + theme_bw()
+
 ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
 
 #weighted
@@ -362,7 +374,7 @@ biplot(trait_pc)
 feeder<-avgStat[,-c(1)]
 #traits<-hum.morph[,c("Bill","Mass","WingChord","Tarsus_Length","Nail_Length","Wing_Loading")]
 
-traits<-hum.morph[,c("Bill","Mass","Bill_width","WingChord","Nail_Length","Foot_Extension")]
+traits<-hum.morph[,c("Bill","Mass","WingChord","Nail_Length","Foot_Extension")]
 rownames(traits)<-hum.morph$English
 
 trait.f<-traits[rownames(traits) %in% rownames(feeder),]
@@ -375,7 +387,10 @@ plot(rd.out<-rda(X=feeder[,],Y=trait.fs[],scale=TRUE,),scaling=1)
 dev.off()
 summary(rd.out)
 
-
+jpeg("Figures/RDA.jpg",res=300,width=7,height=7,units="in")
+plot(rd.out<-rda(X=feeder[,],Y=trait.fs[],scale=TRUE,),scaling=1)
+dev.off()
+summary(rd.out)
 #break into species and elevation
 
 # selective.agg<-aggregate(selective.matrix[,c("Selectivity","bph","Time_Feed")],list(selective.matrix$Elevation,selective.matrix$Species),mean,na.rm=TRUE)
@@ -442,7 +457,7 @@ head(dat)
 distU<-apply(selective.matrix,1,function(x){
   
   #If species doesn't exist in transect, skip
-  if(sum(rangeLim$Species %in% x["Species"])==0) {
+  if(sum(rangeLim$Species %in% x[["Species"]])==0) {
     r<-NA
 
     return(data.frame(UP=NA, RDist=r))
@@ -459,9 +474,11 @@ distU<-apply(selective.matrix,1,function(x){
 
 selective.matrix<-data.frame(selective.matrix,rbind.fill(distU))
 
+selective.matrix$UP
 #Selectivity and distance to range edge.
-rangeplot<-ggplot(selective.matrix,aes(RDist,Selectivity,col=Species,size=Minutes_Total)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1)) 
-rangeplot + facet_wrap(nrow=2,~Species)
+rangeplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep & !is.na(selective.matrix$UP),],aes(RDist,Selectivity,col=Species,size=Minutes_Total,shape=UP)) + geom_point() 
+rangeplot<-rangeplot + stat_smooth(aes(weight=Minutes_Total),method="glm",family="binomial",se=FALSE)
+rangeplot + facet_wrap(~UP)
 
 #####################################################
 #Selectivity as a function of difference in body size
@@ -716,9 +733,11 @@ selective.matrix[,c("fl_all", "fl_s")]<-foreach(g=1:nrow(selective.matrix),.comb
   fl.sp<-flIndex$Iplant_Double
   
   #dates within two weeks either side. 
-  dateL<-abs(difftime(as.POSIXlt(x[["Date"]],format="%m/%d/%Y"),  as.POSIXlt(fltransects$Date,format="%m/%d/%Y"),units="weeks")) <= 2
+  dateL<-abs(difftime(as.POSIXlt(x[["Date"]],format="%m/%d/%Y"),  as.POSIXlt(fltransects$Date,format="%m/%d/%Y"),units="weeks")) <= 2.5
   
+  #and within 200m of the elevation
   flower.month<-fltransects[dateL & (fltransects$ele > x[["Elevation"]]-100 &fltransects$ele < x[["Elevation"]]+ 100) ,]
+  
   if(nrow(flower.month)==0) return(NA)
   
   mean.fl_all<-mean(aggregate(flower.month$Total_Flowers,list(flower.month$Transect.ID),sum,na.rm=TRUE)$x)
@@ -734,72 +753,119 @@ stopCluster(cl)
 
 flowerplot<-melt(id.var=c("Species","Selectivity","Elevation","Minutes_Total","bph"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
 
-resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=factor(Elevation))) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=variable),se=FALSE)
+resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable)) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=variable),se=FALSE)
 resourceplotS+ facet_wrap(~Species,scales="free_x") + labs(x="Available Resources") + theme_bw()
 
 ggsave(paste(gitpath,"Figures/Selectivity_Resources.jpeg",sep=""),height=7,width=11,units="in",dpi=300)
 
-resourceplot<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,y=bph,col=variable,linetype=variable)) + geom_point() + stat_smooth(method="lm",aes(group=variable,weight=Minutes_Total),size=1,se=FALSE)
+resourceplot<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,y=bph,col=variable,linetype=variable)) + geom_point() + stat_smooth(method="lm",aes(group=variable),size=1,se=FALSE)
 resourceplot + facet_wrap(~Species,scales="free",nrow=2) + xlab("Available Resources (# of Flowers)") + ylab("Visits/hour") + labs("Elevation") + theme_bw() + scale_color_discrete(name="Available Resources",labels=c("Species Only","All")) + scale_linetype_discrete(guide=FALSE)
 ggsave(paste(gitpath,"Figures/BPH_Resources.jpeg",sep=""),height=5,width=17,units="in",dpi=300)
 
-####For trapliners, we expect them to just interact with the feeder
+##############Chisqaure anova#################
 
-ggplot(selective.matrix,aes(bph,Selectivity)) + geom_point() + facet_wrap(~Species,scales="free") + geom_smooth(method="lm") + ylim(0,1)
-####PLot all three together
-jpeg("Thesis/Selectivity/HypothesisPlot.jpeg",res=300,height=5,width=20,units="in")
-multiplot(resourceplot,massplot,rangeplot,cols=3)
-dev.off()
+selective.matrix$MassD[!is.finite(selective.matrix$MassD)]<-0
+selective.matrix$MultD[!is.finite(selective.matrix$MultD)]<-0
 
+mod_data<-selective.matrix[selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","RDist","MultD","fl_all","fl_s")]), ]
 
-##############AIC model fit selectivity#################
-
-#Just use species for which we have complete info to compare model fits
-
-mod_data<-selective.matrix[selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","MultD","fl_all")]), ]
+missing<-selective.matrix[!complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","MultD","fl_all","fl_s")]), ]
 
 ##Compute model fits
 
 #Intercept only
-m_intercept<-glm(data=mod_data,Selectivity~1,family="binomial",weights=mod_data$Minutes_Total)
+m_intercept<-glm(data=mod_data,Selectivity~1,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
 #By Species
-m_species<-glm(data=mod_data,Selectivity~Species,family="binomial",weights=mod_data$Minutes_Total)
+m_species<-glm(data=mod_data,Selectivity~Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
 #By Mass
-m_mass<-glm(data=mod_data,Selectivity~Mass:Species,family="binomial",weights=mod_data$Minutes_Total)
+m_mass<-glm(data=mod_data,Selectivity~Mass:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
 #By Difference in Mass
-m_massD<-glm(data=mod_data,Selectivity~MassD:Species,family="binomial",weights=mod_data$Minutes_Total)
+m_massD<-glm(data=mod_data,Selectivity~MassD:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
 #By multivariate distance
-m_multD<-glm(data=mod_data,Selectivity~MultD:Species,family="binomial",weights=mod_data$Minutes_Total)
+m_multD<-glm(data=mod_data,Selectivity~MultD:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
-#By Elevation
-m_Elevation<-glm(data=mod_data,Selectivity~Elevation:Species,family="binomial",weights=mod_data$Minutes_Total)
+#By Distance to range edge
+m_Elevation<-glm(data=mod_data,Selectivity~RDist:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
 #By available resources, all
-m_Allresources<-glm(data=mod_data,Selectivity~fl_all:Species,family="binomial",weights=mod_data$Minutes_Total)
+m_Allresources<-glm(data=mod_data,Selectivity~fl_all:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
 #By available resources, by species
-m_Speciesresources<-glm(data=mod_data,Selectivity~fl_s:Species,family="binomial",weights=mod_data$Minutes_Total)
+m_Speciesresources<-glm(data=mod_data,Selectivity~fl_s:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+
+m_MorphResources<-glm(data=mod_data,Selectivity~fl_s:Species + Mass:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
 #rsquared for best model
 
-1-m_Speciesresources$deviance/m_Speciesresources$null.deviance
+
+1-m_Allresources$deviance/m_Allresources$null.deviance
+
+mods<-list(m_intercept,m_species,m_mass,m_massD,m_multD,m_Elevation,m_Allresources,m_Speciesresources)
 
 
-mods<-list(m_species,m_mass,m_massD,m_Elevation,m_Allresources)
-aictable<-AIC(m_intercept,m_species,m_mass,m_massD,m_multD,m_Elevation,m_Allresources,m_Speciesresources)
+
+#Significance of terms
+lapply(mods,anova,test="Chisq")
+
+anova(m_intercept,m_Speciesresources,m_Allresources,test=c("Chisq"))
+
+at<-anova(m_intercept,m_Allresources,m_Speciesresources,test=c("Chisq"))
+at<-anova(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_Speciesresources,test=c("Chisq"))
+
+at<-anova(m_Allresources,m_Speciesresources,test=c("Chisq"))
+
+summary(at)
+at
+
+#######AIC##################
+#Just use species for which we have complete info to compare model fits
+
+
+missing<-selective.matrix[!selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","MultD","fl_all")]), ]
+
+nrow(selective.matrix)
+
+nrow(mod_data)
+
+aictable<-AIC(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_Speciesresources,m_MorphResources)
 aictable[order(aictable$AIC),]
 
 capture.output(aictable,file="Figures/AIC.xls")
 
-#Psuedo Rsquared
-1-m_Speciesresources$deviance/m_Speciesresources$null.deviance
-
-at<-anova(m_intercept,m_species,m_mass,m_massD,m_multD,m_Elevation,m_Allresources,m_Speciesresources,test=c("Chisq"))
-summary(at)
 
 #write table to file
 capture.output(at,file="Figures/Anova.xls")
+
+#############################
+#Multimodel inference
+#############################
+require(MuMIn)
+
+modelA<-model.avg(m_intercept,m_MorphResources,m_species,m_mass,m_Elevation,m_massD,m_multD,m_Allresources,m_Speciesresources)
+
+#Get psuedoR2
+mods<-list(m_intercept,m_MorphResources,m_species,m_mass,m_Elevation,m_massD,m_multD,m_Allresources,m_Speciesresources)
+R2<-lapply(mods,function(x){
+  1-x$deviance/x$null.deviance
+})
+
+sumAIC<-round(modelA$summary,2)
+
+###############Needs to be hand ordered if rerun, no match yet.
+sumAIC$PsuedoR2<-round(unlist(R2),2)[c(2,9,5,7,3,4,8,6,1)]
+
+sumAIC
+capture.output(sumAIC,file="Figures/AIC.xls")
+
+anova(m_Speciesresources,m_MorphResources,test="Chisq")
+
+
+
+
+
+
+save.image("Selectivity.RData")
