@@ -366,7 +366,14 @@ ggsave(paste(gitpath,"Figures/FullTrial.jpeg",sep=""),dpi=300,height=7,width=11)
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
 colnames(wss)<-c("Species","PC1","PC2","weighted.selectivity")
 
-biplot(trait_pc)
+pdf("Figures/morphPCA.pdf")
+biplot(prcomp(trait.f[rownames(trait.f) %in% keep,],scale=TRUE))
+dev.off()
+
+jpeg("Figures/morphPCA.jpeg")
+biplot(prcomp(trait.f[rownames(trait.f) %in% keep,],scale=TRUE))
+dev.off()
+
 
 ##cca 
 
@@ -382,8 +389,10 @@ trait.f<-traits[rownames(traits) %in% rownames(feeder),]
 #same order?
 trait.fs<-trait.f[sort(rownames(feeder)),]
 
+fe<-as.data.frame(feeder$Weighted.Selectivity)
+rownames(fe)<-rownames(feeder)
 pdf("Figures/RDA.pdf")
-plot(rd.out<-rda(X=feeder[,],Y=trait.fs[],scale=TRUE,),scaling=1)
+plot(rd.out<-rda(X=fe,Y=trait.fs),scaling=3)
 dev.off()
 summary(rd.out)
 
