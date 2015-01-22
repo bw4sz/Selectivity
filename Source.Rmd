@@ -9,13 +9,15 @@ output:
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 library(knitr)
-opts_chunk$set(message=FALSE,warning=FALSE,fig.width=13,echo=FALSE,cache=TRUE,cache.path = 'Source_cache/', fig.path='figure/')
+opts_chunk$set(message=FALSE,warning=FALSE,fig.width=13,fig.height=10,echo=TRUE,cache=TRUE,cache.path = 'Source_cache/', fig.path='figure/')
 
 library(ggplot2)
 library(chron)
+library(reshape)
 library(reshape2)
 library(plotKML)
 library(maptools)
+library(foreach)
 library(vegan)
 library(plyr)
 library(rms)
@@ -267,7 +269,7 @@ sH<-sum(selective.matrix$Minutes_High)
 sL<-sum(selective.matrix$Minutes_Low)
 
 #Optimal foraging says its should be three
-paste("Species feed on the high value", sH/sL, "times than the low value")
+paste("Species feed on the high value", round(sH/sL,2), "times than the low value")
 
 #set minimal number of datapoints. 
 keep<-names(which(table(selective.matrix$Species) > 4))
@@ -280,22 +282,10 @@ ggplot(selective.matrix,aes(x=N,y=Minutes_Low)) + geom_point() + stat_smooth(met
 ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=N,y=Selectivity)) + geom_point() + ylim(0,1) + stat_smooth(method="lm") + facet_wrap(~Species,scales="free_x")
 ```
 
-#Elevation and Selectivity Analysis
-
-```{r}
-#unweighted
-p<-ggplot(selective.matrix[],aes(x=as.numeric(Elevation),Selectivity)) + geom_point(size=3) + facet_wrap(~Species) + stat_smooth(method="glm",aes(group=1),family="binomial")
-p + theme_bw()
-
-ggsave(paste(gitpath,"Figures//Selectivity_Elevation_Unweighted.svg",sep=""),height=8,width=15)
-```
-
-
-#Hummingbird Morphology and Selectivity
+##Hummingbird Morphology and Selectivity
 
 ```{r}
 #PCA of trait space
-
 # Hum Standardized variables, what to do about NA's?
 #Standard the matrix to correct for different units by subtracting the means and dividing by sd
 zscore <- apply(hum.morph[,c("Bill","Mass","Tarsus_Length","Nail_Length","Wing_Loading")], 2, function(x){
@@ -309,8 +299,8 @@ trait_pc<-prcomp(zscore)
 
 #View Biplot of PC Space
 biplot(trait_pc)
-#distance in PCA space
 
+#distance in PCA space
 d.pca<-as.matrix(dist(trait_pc$x))
 
 #bind loadings 1 and 2 to dataframe
@@ -358,14 +348,16 @@ ggplot(selective.matrix,aes(x=Species,Selectivity,fill=Mass)) + geom_boxplot() +
 ggplot(selective.matrix,aes(x=Species,Selectivity,fill=Mass)) + geom_boxplot() + theme_bw() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,scale="free_x",nrow=2) + geom_point()
 ```
 
-#Trait PCA and Selectivity
-```{r,eval=FALSE}
+##Trait PCA and Selectivity
+```{r,eval=TRUE}
 traits<-hum.morph[,c("Bill","Mass","Wing_Loading","Nail_Length","Foot_Extension")]
 rownames(traits)<-hum.morph$English
 
 #aggregate by species
-trait.f<-traits[rownames(traits) %in% rownames(feeder),]
+trait.f<-traits[rownames(traits) %in% avgStat$Species,]
+```
 
+```{r,eval=FALSE}
 wss<-aggregate(selective.matrix$weighted.selectivity,by=list(selective.matrix$Species,selective.matrix$PC1,selective.matrix$PC2),mean)
 colnames(wss)<-c("Species","PC1","PC2","weighted.selectivity")
 
@@ -374,7 +366,7 @@ biplot(prcomp(trait.f[rownames(trait.f) %in% keep,],scale=TRUE))
 
 ```
 
-#Selectivity as a function of difference in body size
+##Selectivity as a function of difference in body size
 
 ```{r}
 #Species list for each trial.
@@ -422,7 +414,7 @@ massplot + facet_wrap(~Species,scale="free_x")
 ```
 
 
-#Selectivity as a function of phylogenetic relatedness
+##Selectivity as a function of phylogenetic relatedness
 
 ```{r}
 #Species list for each trial.
@@ -435,7 +427,6 @@ sp.lists<-sapply(complete.trial,function(x){
 
 #get the species with the max body size at the feeder during that trial
 selective.matrix$PhyloD<-sapply(1:nrow(selective.matrix),function(y){
-  print(y)
   x<-selective.matrix[y,]
   
   #find the index in the list
@@ -466,7 +457,7 @@ phyloplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=Ph
 phyloplot + facet_wrap(~Species,scale="free_x") 
 ```
 
-###Selectivity and moving window of mass difference
+##Selectivity and moving window of mass difference
 
 ```{r}
 #For each row in the selectivity matrix, get the difference to the largest species
@@ -498,13 +489,13 @@ selective.matrix$MassD<-sapply(1:nrow(selective.matrix),function(y){
   
   return(weight.diff)})
 
-massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1),legend=FALSE)
+massplot<-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=MassD,y=Selectivity,size=Minutes_Total,label=Species,col=Species)) + geom_point() + stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=1))
 massplot + facet_wrap(~Species,scales="free_x",nrow=2) + theme_bw()
 ggsave(paste(gitpath,"Figures/Mass_Selectivity.jpeg",sep=""),height=8,width=12,units="in",dpi=300)
 ```
 
 
-#Selectivity as a function of difference in morph space
+##Selectivity as a function of difference in morph space
 
 ```{r}
 #get body size lists for each trial
@@ -618,7 +609,7 @@ MultD<-ggplot(data=selective.matrix[selective.matrix$Species %in% keep,],aes(x=M
 MultD + facet_wrap(~Species,scales="free_x")
 ```
 
-#Selectivity and Available Resource
+##Selectivity and Available Resource
 
 ```{r}
 #just summer data
@@ -643,9 +634,6 @@ gps$mergeID<-paste(gps$GPS_ID,gps$MonthID,sep="_")
 gps_d<-gps[duplicated(gps,fromLast=TRUE),]
 
 fltransects$mergeID<-paste(fltransects$GPS_ID,fltransects$month,sep="_")
-
-table(fltransects$mergeID %in% gps$mergeID)
-table(fltransects$GPS_ID %in% gps$GPS_ID)
 
 fltransects<-merge(fltransects,gps_d,by="mergeID",all.x=TRUE)
 
@@ -682,12 +670,10 @@ selective.matrix[,c("fl_all", "fl_s")]<-foreach(g=1:nrow(selective.matrix),.comb
   mean.fl<-mean(aggregate(flower_sp$Total_Flowers,list(flower_sp$Transect.ID),sum,na.rm=TRUE)$x)
   
   return(c(mean.fl_all,mean.fl))}
-stopCluster(cl)
 
-flowerplot<-melt(id.var=c("Species","Selectivity","Elevation","Minutes_Total","bph"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
+flowerplot<-melt(id.var=c("Species","Selectivity","Minutes_Total","bph"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
 
 resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable)) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=variable),se=FALSE)
-resourceplotS+ facet_wrap(~Species,scales="free_x") + labs(x="Available Resources") + theme_bw()
 
 resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable,size=Minutes_Total)) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=variable))
 resourceplotS+ facet_wrap(~Species,scales="free_x",nrow=3) + labs(x="Available Resources") + theme_bw() + scale_color_discrete("Resource Model",labels=c("Private Resources","All Resources")) + scale_linetype_discrete(guide="none")
@@ -699,68 +685,53 @@ resourceplotS+ facet_wrap(~Species,scales="free_x",nrow=3) + labs(x="Available R
 selective.matrix$MassD[!is.finite(selective.matrix$MassD)]<-0
 selective.matrix$MultD[!is.finite(selective.matrix$MultD)]<-0
 
-mod_data<-selective.matrix[selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","PhyloD","RDist","MultD","fl_all","fl_s")]), ]
+mod_data<-selective.matrix[selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","PhyloD","MultD","fl_all","fl_s")]), ]
 
-missing<-selective.matrix[!complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","MultD","PhyloD", "fl_all","fl_s")]), ]
+missing<-selective.matrix[!complete.cases(selective.matrix[,c("Species","Mass","MassD","MultD","PhyloD", "fl_all","fl_s")]), ]
 
 ##Compute model fits
 
+#Create response column, needs to be formatted, cbind(successes,failures)
+response<-cbind((minutes(mod_data$Time_High)*60+seconds(mod_data$Time_High)),(minutes(mod_data$Time_Low)*60+seconds(mod_data$Time_Low)))
+
 #Intercept only
-m_intercept<-glm(data=mod_data,Selectivity~1,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_intercept<-glm(data=mod_data,response~1,family="binomial",na.action="na.fail")
 
 #By Species
-m_species<-glm(data=mod_data,Selectivity~Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_species<-glm(data=mod_data,response~Species,family="binomial",na.action="na.fail")
 
 #By Mass
-m_mass<-glm(data=mod_data,Selectivity~Mass:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_mass<-glm(data=mod_data,response~Mass:Species,family="binomial",na.action="na.fail")
 
 #By Difference in Mass
-m_massD<-glm(data=mod_data,Selectivity~MassD:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_massD<-glm(data=mod_data,response~MassD:Species,family="binomial",na.action="na.fail")
 
 #By multivariate distance
-m_multD<-glm(data=mod_data,Selectivity~MultD:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_multD<-glm(data=mod_data,response~MultD:Species,family="binomial",na.action="na.fail")
 
 #By phylogenetic distance
-m_phyloD<-glm(data=mod_data,Selectivity~PhyloD:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
-
-#By Distance to range edge
-m_Elevation<-glm(data=mod_data,Selectivity~RDist:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_phyloD<-glm(data=mod_data,response~PhyloD:Species,family="binomial",na.action="na.fail")
 
 #By available resources, all
-m_Allresources<-glm(data=mod_data,Selectivity~fl_all:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_Allresources<-glm(data=mod_data,response~fl_all:Species,family="binomial",na.action="na.fail")
 
 #By available resources, by species
-m_Speciesresources<-glm(data=mod_data,Selectivity~fl_s:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_Speciesresources<-glm(data=mod_data,response~fl_s:Species,family="binomial",na.action="na.fail")
 
-m_MorphResources<-glm(data=mod_data,Selectivity~fl_s:Species + Mass:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_MorphResources<-glm(data=mod_data,response~fl_s:Species + Mass:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
 
-m_MorphXResources<-glm(data=mod_data,Selectivity~fl_s:Species * Mass:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_MorphXResources<-glm(data=mod_data,response~fl_s:Species * Mass:Species,family="binomial",na.action="na.fail")
 
-m_PhyloXResources<-glm(data=mod_data,Selectivity~fl_s:Species * PhyloD:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
+m_PhyloXResources<-glm(data=mod_data,response~fl_s:Species * PhyloD:Species,family="binomial",na.action="na.fail")
 
-mods<-list(m_intercept,m_species,m_mass,m_massD,m_phyloD,m_multD,m_Elevation,m_Allresources,m_Speciesresources)
+mods<-list(m_intercept,m_species,m_mass,m_massD,m_phyloD,m_multD,m_Allresources,m_Speciesresources)
+```
 
-#Significance of terms
-lapply(mods,anova,test="Chisq")
+##Model Criticism
 
-anova(m_intercept,m_Speciesresources,m_Allresources,test=c("Chisq"))
-
-at<-anova(m_intercept,m_Allresources,m_Speciesresources,test=c("Chisq"))
-at<-anova(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_Speciesresources,test=c("Chisq"))
-
-at<-anova(m_Allresources,m_Speciesresources,test=c("Chisq"))
-
-summary(at)
-at
-
-#######AIC##################
-#Just use species for which we have complete info to compare model fits
-
-missing<-selective.matrix[!selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","Elevation","MultD","fl_all")]), ]
-
-nrow(selective.matrix)
-
-nrow(mod_data)
+###AIC
+```{r}
+missing<-selective.matrix[!selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","MultD","fl_all")]), ]
 
 aictable<-AIC(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_phyloD,m_Speciesresources)
 aictable[order(aictable$AIC),]
@@ -768,14 +739,13 @@ aictable[order(aictable$AIC),]
 capture.output(aictable,file="Figures/AIC.xls")
 
 #write table to file
-capture.output(at,file="Figures/Anova.xls")
+#capture.output(at,file="Figures/Anova.xls")
+```
 
-#############################
 #Multimodel inference
-#############################
 
+```{r}
 modelA<-model.avg(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_Speciesresources,m_phyloD)
-
 
 #get N
 mods<-list(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_Speciesresources,m_phyloD)
@@ -791,19 +761,21 @@ R2<-lapply(mods,function(x){
 })
 
 sumAIC<-round(modelA$summary,2)
+modelA$term.codes
 
 ###############Needs to be hand ordered if rerun, no match yet.
-sumAIC$PsuedoR2<-round(unlist(R2),2)[c(7,8,6,5,2,3,4)]
+#sumAIC$PsuedoR2<-round(unlist(R2),2)[c(7,8,6,5,2,3,4)]
 
-sumAIC
-capture.output(sumAIC,file="Figures/AIC.xls")
+#sumAIC
+#capture.output(sumAIC,file="Figures/AIC.xls")
 
-anova(m_Speciesresources,m_MorphResources,test="Chisq")
+#anova(m_Speciesresources,m_MorphResources,test="Chisq")
+```
 
-###################################################
-##########Mantel test of traits and resources
-###################################################
 
+#Mantel test of traits and resources
+
+```{r}
 # #format flower matrix
 flmatrix<-as.data.frame.array(table(vid$Hummingbird,vid$Iplant_Double))
 
@@ -832,7 +804,7 @@ phy_dist<-ctrx[rownames(ctrx) %in% sp_keep$S,colnames(ctrx) %in% sp_keep$S]
 #reorder to match flower matrix
 ord<-as.character(sp_keep$S)
 re_ord<-as.numeric(sapply(ord,function(x) which(x == rownames(phy_dist))))
-phy_ord<-phy_dist[re_ord,re_oresd]
+phy_ord<-phy_dist[re_ord,re_ord]
 
 mantel(phy_ord,dist(flower))
 ```
