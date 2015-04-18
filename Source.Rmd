@@ -1,11 +1,30 @@
 ---
-title: "AppendixA_SourceCode"
+title: "Appendix B"
 author: "Ben Weinstein"
 date: "Wednesday, January 21, 2015"
 output:
   html_document:
     theme: spacelab
 ---
+# Source Code
+
+All code can be cloned from a github repository: 
+https://github.com/bw4sz/Selectivity
+
+To run code, just change the variable 'gitpath' to where you cloned the repo.
+
+## Additional data files can be downloaded here:
+
+Competition_Feeders:
+https://www.dropbox.com/s/xss1hxz0wuhahl1/CompetitionFeeders.csv?dl=0
+
+Hummingbird Morphology:
+https://www.dropbox.com/s/m9zp2hdevi1vg5v/HummingbirdMorphology.csv?dl=0
+
+Flower Transects: https://www.dropbox.com/s/j1awf90dzfi28oh/CleanedHolgerTransect.csv?dl=0
+
+Flower Visitation:https://www.dropbox.com/s/0hdxpdkja8ph6t5/FlowerVideoClean.csv?dl=0
+
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 library(knitr)
@@ -23,10 +42,13 @@ library(plyr)
 library(rms)
 library(MuMIn)
 library(ape)
+library(taxize)
+library(bipartite)
+load("Selectivity.RData")
 
 ```
 
-#Set Environment and Read in data
+#Set environment and read in data
 
 ```{r}
 #set gitpath
@@ -41,7 +63,7 @@ droppath<-"C:/Users/Ben/Dropbox/"
 ##Load image if needed
 #load("Selectivity.RData")
 
-#Read in data
+#Read in feeder data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
 
 #Make all entries capital
@@ -56,9 +78,17 @@ dat<-dat[,1:12]
 #read in flower totals from FlowerTransects.R
 fltransects<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/FlowerTransects/CleanedHolgerTransect.csv",sep=""),row.names=1)
 
-#Bring in video data
-vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Results/Network/HummingbirdInteractions.csv",sep=""),row.names=1)
+vid<-read.csv(paste(droppath,"Thesis/Maquipucuna_SantaLucia/Data2013/csv/FlowerVideoClean.csv",sep=""),row.names=1)
 
+
+
+vid$Year<-years(chron(as.character(vid$Date)))
+vid$Month<-as.numeric(months(chron(as.character(vid$Date))))
+
+#gps introduced some duplicates, just remove any doubles based on time date species, id
+toremove<-duplicated(vid[,c("ID","Time","Hummingbird","Iplant_Double","Month","Year")])
+
+vid<-droplevels(vid[!toremove,])
 #Bring in Phylogenetic Data
 trx<-read.nexus(paste(gitpath,"InputData\\ColombiaPhylogenyUM.tre",sep=""))
 spnames<-read.table(paste(gitpath,"InputData\\SpNameTree.txt",sep="") , sep = "\t", header = TRUE)
@@ -96,7 +126,7 @@ dat$Time.Begin<-chron::times(dat$Time.Begin)
 dat$Time_Feeder_Obs<-dat$Time.End - dat$Time.Begin
 
 #Get any rownumbers that are negative, these need to be fixed. 
-dat[which(dat$Time_Feeder_Obs < 0),]
+#dat[which(dat$Time_Feeder_Obs < 0),]
 
 #average visits per hour
 S_H<-table(hours(dat$Time.Begin),dat$Species)
@@ -109,7 +139,7 @@ S_H<-table(hours(dat$Time.Begin),dat$Species)
 dat$Time_Stamp<-as.POSIXct(chron(dates=as.character(dat$Date),dat$Time.Begin))
 
 #Time and species occurence, facetted by elevation
- ggplot(dat,aes(x=strptime(dat$Time.Begin,"%H:%M"),fill=Species)) + geom_histogram(position="dodge") + facet_wrap(~Elevation)
+ ggplot(dat,aes(x=strptime(dat$Time.Begin,"%H:%M"),fill=Species)) + geom_histogram(position="dodge") + facet_wrap(~Elevation) + xlab("Time")
 # ggsave("Thesis//Maquipucuna_SantaLucia/Results/TimeofDayElevation.svg",height=11,width=8,dpi=300)
 # 
 # #Overall Month_Day and Elevation
@@ -141,15 +171,12 @@ p+labs(x="Elevation",y="Species",fill="Minutes Feeding")
 #mean time feeding bout
 Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
 colnames(Mean_Time_Species)<-c("Species","Mean_Time")
-
-ggplot(dat,aes(x=seconds(Time_Feeder_Obs))) + geom_histogram()  + theme_bw() + ggtitle("Mean Time Feeding per Species")
 ```
 
 #Selectivity Analysis
 
 ```{r}
 #Create a species list for each video
-
 ####Match each trial together, trials are done on the same day at the same elevation
 
 #Split data into a list, with each compenent being one trial pair
@@ -261,7 +288,7 @@ selective.matrix$Minutes_Total<-selective.matrix$Minutes_Low+selective.matrix$Mi
 selective.matrix$MonthA<-format(as.POSIXct(selective.matrix$Date,format="%m/%d/%Y"),"%b")
 ```
 
-#Optimal foraging?
+#Optimal foraging
 
 Theory says that individuals should occupy patches at a rate equal to their quality
 ```{r}
@@ -276,6 +303,7 @@ keep<-names(which(table(selective.matrix$Species) > 4))
 ```
 
 ###Total visits does not effect selectivity, just amount of total feeding
+
 ```{r}
 ggplot(selective.matrix,aes(x=N,y=Minutes_High)) + geom_point() + stat_smooth(method="lm")
 ggplot(selective.matrix,aes(x=N,y=Minutes_Low)) + geom_point() + stat_smooth(method="lm")
@@ -342,10 +370,10 @@ pcaStat<-prcomp(avgStat[,-c(1)],scale=TRUE)
 biplot(pcaStat)
 
 #Facet by elevation
-ggplot(selective.matrix,aes(x=Species,Selectivity,fill=Mass)) + geom_boxplot() + theme_bw() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2,scale="free_x") + scale_fill_continuous(low="white",high="black") + labs(fill= "Mass (g)")
-
+ggplot(selective.matrix,aes(x=Species,Selectivity,fill=Mass)) + geom_boxplot() + theme_bw() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,nrow=2,scale="free_x") + scale_fill_continuous(low="white",high="black") + labs(fill= "Mass (g)") 
 #Facet by elevation, color by replicate
-ggplot(selective.matrix,aes(x=Species,Selectivity,fill=Mass)) + geom_boxplot() + theme_bw() + theme(axis.text.x=element_text(angle=-90,vjust=-.1)) + facet_wrap(~Elevation,scale="free_x",nrow=2) + geom_point()
+ggplot(selective.matrix,aes(x=Species,Selectivity,fill=Mass)) + geom_boxplot() + theme_bw()  + facet_wrap(~Elevation,scale="free_x",ncol=4) + scale_fill_gradient(low="blue",high="red")+ theme(axis.text.x=element_text(angle=65,hjust=1))
+ggsave("Figures/Mass_SelectivityBoxplots.jpeg",dpi=300,height=8,width=11)
 ```
 
 ##Trait PCA and Selectivity
@@ -613,12 +641,12 @@ MultD + facet_wrap(~Species,scales="free_x")
 
 ```{r}
 #just summer data
-fltransects<-droplevels(fltransects[fltransects$month %in% c(6,7,8),])
+fltransects<-droplevels(fltransects[fltransects$month %in% c(6,7,8) & fltransects$Year %in% "2013",])
 
 fltransects$GPS_ID<-as.numeric(as.character(fltransects$GPS_ID))
 
 #just get videos from the summer months
-vid<-vid[vid$Month %in% c(6,7,8),]
+vid<-vid[vid$Month %in% c(6,7,8) & vid$Year %in% 2013,]
 
 #match with spatial infodim
 gps<-readShapePoints(paste(droppath,"Thesis\\Maquipucuna_SantaLucia\\Data2013\\Shapefiles\\GPSshape.shp",sep=""))@data
@@ -673,10 +701,12 @@ selective.matrix[,c("fl_all", "fl_s")]<-foreach(g=1:nrow(selective.matrix),.comb
 
 flowerplot<-melt(id.var=c("Species","Selectivity","Minutes_Total","bph"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
 
-resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable)) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=variable),se=FALSE)
 
-resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable,size=Minutes_Total)) + geom_point() +  stat_smooth(method="glm",family="binomial",aes(weight=Minutes_Total,group=variable))
-resourceplotS+ facet_wrap(~Species,scales="free_x",nrow=3) + labs(x="Available Resources") + theme_bw() + scale_color_discrete("Resource Model",labels=c("Private Resources","All Resources")) + scale_linetype_discrete(guide="none")
+resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable,size=Minutes_Total)) + geom_point() +  stat_smooth(show_guide=F,method="glm",family="binomial",aes(weight=Minutes_Total,group=variable))
+
+resourceplotS+ facet_wrap(~Species,scales="free_x",nrow=3) + labs(x="Available Resources") + theme_gray() + scale_color_manual(values=c("black","grey40"),"Resource Model",labels=c("Favored Resources","All Resources")) + scale_linetype_discrete(guide="none") + labs(size="Minutes") + theme_bw()
+
+ggsave("Figures/Resource_Selectivity.jpeg",dpi=300,height=7,width=10,units="in")
 ```
 
 #Model Fitting
@@ -692,7 +722,7 @@ missing<-selective.matrix[!complete.cases(selective.matrix[,c("Species","Mass","
 ##Compute model fits
 
 #Create response column, needs to be formatted, cbind(successes,failures)
-response<-cbind((minutes(mod_data$Time_High)*60+seconds(mod_data$Time_High)),(minutes(mod_data$Time_Low)*60+seconds(mod_data$Time_Low)))
+response<-cbind((minutes(mod_data$Time_High)+seconds(mod_data$Time_High)/60),(minutes(mod_data$Time_Low)+seconds(mod_data$Time_Low)/60))
 
 #Intercept only
 m_intercept<-glm(data=mod_data,response~1,family="binomial",na.action="na.fail")
@@ -717,12 +747,6 @@ m_Allresources<-glm(data=mod_data,response~fl_all:Species,family="binomial",na.a
 
 #By available resources, by species
 m_Speciesresources<-glm(data=mod_data,response~fl_s:Species,family="binomial",na.action="na.fail")
-
-m_MorphResources<-glm(data=mod_data,response~fl_s:Species + Mass:Species,family="binomial",weights=mod_data$Minutes_Total,na.action="na.fail")
-
-m_MorphXResources<-glm(data=mod_data,response~fl_s:Species * Mass:Species,family="binomial",na.action="na.fail")
-
-m_PhyloXResources<-glm(data=mod_data,response~fl_s:Species * PhyloD:Species,family="binomial",na.action="na.fail")
 
 mods<-list(m_intercept,m_species,m_mass,m_massD,m_phyloD,m_multD,m_Allresources,m_Speciesresources)
 ```
@@ -750,10 +774,6 @@ modelA<-model.avg(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_
 #get N
 mods<-list(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_Speciesresources,m_phyloD)
 
-lapply(mods,function(x){
-  nrow(x$data)
-})
-
 #Get psuedoR2
 
 R2<-lapply(mods,function(x){
@@ -761,13 +781,14 @@ R2<-lapply(mods,function(x){
 })
 
 sumAIC<-round(modelA$summary,2)
+print(sumAIC)
 modelA$term.codes
 
 ###############Needs to be hand ordered if rerun, no match yet.
-#sumAIC$PsuedoR2<-round(unlist(R2),2)[c(7,8,6,5,2,3,4)]
+sumAIC$PsuedoR2<-round(unlist(R2),2)[c(7,6,8,5,2,3,4,1)]
 
-#sumAIC
-#capture.output(sumAIC,file="Figures/AIC.xls")
+sumAIC
+capture.output(sumAIC,file="Figures/AIC.xls")
 
 #anova(m_Speciesresources,m_MorphResources,test="Chisq")
 ```
@@ -823,9 +844,24 @@ colnames(a)<-c("Birds","Flowers","value")
 a$Flowers<-factor(a$Flowers,levels=orderflowers)
 a$Birds<-factor(a$Birds,levels=orderbirds)
 
-ggplot(a[a$value>0,],aes(x=Birds,y=Flowers,fill=value)) + geom_tile()+ theme_bw() + scale_fill_continuous(low="blue",high="red") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(fill="# of Visits")
+ggplot(a[a$value>0,],aes(x=Birds,y=Flowers,fill=value)) + geom_tile()+ theme_bw() + scale_fill_continuous(low="grey40",high="black") + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + labs(fill="# of Visits")
 ggsave("Figures/MatrixPlot.jpeg",dpi=600,height=6.5,width=7)
+```
 
+#Analysis of Niche Overlap
+
+```{r}
+FH<-t(as.matrix(flower))
+networkL<-networklevel(FH,"niche overlap")[[1]]
+null_niche<-sapply(nullmodel(FH),function(x){
+  networklevel(x,"niche overlap")[[1]]})
+
+ggplot() + geom_histogram(data=data.frame(null_niche),aes(x=null_niche)) + theme_bw() + geom_vline(xintercept=networkL,linetype='dashed',col='grey50',size=1.5) + xlab("Niche Overlap") 
+ggsave("Figures/NicheOverlap.jpg",units="in",width=5,height=3,dpi=600)
+
+```
+
+```{r}
 #save data
 save.image("Selectivity.RData")
 ```
