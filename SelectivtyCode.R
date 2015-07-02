@@ -24,6 +24,9 @@ source(paste(gitpath,"functions.R",sep=""))
 #Set working directory
 droppath<-"C:/Users/Ben/Dropbox/"
 
+#load data if needed
+load("Selectivity.RData")
+
 #Read in data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
 
@@ -871,10 +874,5 @@ sumAIC
 capture.output(sumAIC,file="Figures/AIC.xls")
 
 anova(m_Speciesresources,m_MorphResources,test="Chisq")
-
-
-
-
-
 
 save.image("Selectivity.RData")

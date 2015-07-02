@@ -39,6 +39,7 @@ library(maptools)
 library(foreach)
 library(vegan)
 library(plyr)
+library(dplyr)
 library(rms)
 library(MuMIn)
 library(ape)
@@ -172,8 +173,6 @@ p+labs(x="Elevation",y="Species",fill="Minutes Feeding")
 Mean_Time_Species<-aggregate(dat$Time_Feeder_Obs,by=list(dat$Species),mean,na.rm=TRUE) 
 colnames(Mean_Time_Species)<-c("Species","Mean_Time")
 ```
-
-#Selectivity Analysis
 
 ```{r}
 #Create a species list for each video
@@ -731,22 +730,22 @@ m_intercept<-glm(data=mod_data,response~1,family="binomial",na.action="na.fail")
 m_species<-glm(data=mod_data,response~Species,family="binomial",na.action="na.fail")
 
 #By Mass
-m_mass<-glm(data=mod_data,response~Mass:Species,family="binomial",na.action="na.fail")
+m_mass<-glm(data=mod_data,response~Mass*Species,family="binomial",na.action="na.fail")
 
 #By Difference in Mass
-m_massD<-glm(data=mod_data,response~MassD:Species,family="binomial",na.action="na.fail")
+m_massD<-glm(data=mod_data,response~MassD*Species,family="binomial",na.action="na.fail")
 
 #By multivariate distance
-m_multD<-glm(data=mod_data,response~MultD:Species,family="binomial",na.action="na.fail")
+m_multD<-glm(data=mod_data,response~MultD*Species,family="binomial",na.action="na.fail")
 
 #By phylogenetic distance
-m_phyloD<-glm(data=mod_data,response~PhyloD:Species,family="binomial",na.action="na.fail")
+m_phyloD<-glm(data=mod_data,response~PhyloD*Species,family="binomial",na.action="na.fail")
 
 #By available resources, all
-m_Allresources<-glm(data=mod_data,response~fl_all:Species,family="binomial",na.action="na.fail")
+m_Allresources<-glm(data=mod_data,response~fl_all*Species,family="binomial",na.action="na.fail")
 
 #By available resources, by species
-m_Speciesresources<-glm(data=mod_data,response~fl_s:Species,family="binomial",na.action="na.fail")
+m_Speciesresources<-glm(data=mod_data,response~fl_s*Species,family="binomial",na.action="na.fail")
 
 mods<-list(m_intercept,m_species,m_mass,m_massD,m_phyloD,m_multD,m_Allresources,m_Speciesresources)
 ```
@@ -758,6 +757,7 @@ mods<-list(m_intercept,m_species,m_mass,m_massD,m_phyloD,m_multD,m_Allresources,
 missing<-selective.matrix[!selective.matrix$Species %in% keep & complete.cases(selective.matrix[,c("Species","Mass","MassD","MultD","fl_all")]), ]
 
 aictable<-AIC(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_phyloD,m_Speciesresources)
+aictable$Delta<-aictable$AIC-min(aictable$AIC)
 aictable[order(aictable$AIC),]
 
 capture.output(aictable,file="Figures/AIC.xls")
@@ -776,13 +776,13 @@ mods<-list(m_intercept,m_species,m_mass,m_massD,m_multD,m_Allresources,m_Species
 
 #Get psuedoR2
 
-R2<-lapply(mods,function(x){
+R2<-sapply(mods,function(x){
   1-x$deviance/x$null.deviance
 })
 
-sumAIC<-round(modelA$summary,2)
+sumAIC<-round(modelA$msTable,2)
 print(sumAIC)
-modelA$term.codes
+modelA
 
 ###############Needs to be hand ordered if rerun, no match yet.
 sumAIC$PsuedoR2<-round(unlist(R2),2)[c(7,6,8,5,2,3,4,1)]
@@ -844,10 +844,24 @@ colnames(a)<-c("Birds","Flowers","value")
 a$Flowers<-factor(a$Flowers,levels=orderflowers)
 a$Birds<-factor(a$Birds,levels=orderbirds)
 
-ggplot(a[a$value>0,],aes(x=Birds,y=Flowers,fill=value)) + geom_tile()+ theme_bw() + scale_fill_continuous(low="grey40",high="black") + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + labs(fill="# of Visits")
-ggsave("Figures/MatrixPlot.jpeg",dpi=600,height=6.5,width=7)
+ggplot(a[a$value>0,],aes(x=Birds,y=Flowers,fill=value)) + geom_tile()+ theme_bw() + scale_fill_continuous(low="grey90",high="black") + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + labs(fill="# of Visits")
+ggsave("Figures/MatrixPlot.jpeg",dpi=600,height=7,width=6)
 ```
 
+#Visitation rates
+```{r}
+head(selective.matrix)
+
+gvisit<-melt(selective.matrix, id.vars=c("Species","Elevation","Date","Replicate","Selectivity","Tvisits","bph","Minutes_Total","fl_s","fl_all"),measure.vars=c("Minutes_High","Minutes_Low"))
+
+ggplot(gvisit[gvisit$Species %in% keep,],aes(x=fl_s,y=value,col=variable)) + geom_point(size=2) + facet_wrap(~Species,scale="free") + geom_smooth(method="glm",family="poisson",alpha=.1) + theme_bw() + labs(x="Abundance of Preferred Resources",y="Minutes on Feeder",col="Feeder") + scale_color_manual(labels=c("High Value","Low Value"),values=c("Black","grey60"))
+
+#Total minutes
+gvisit<-melt(selective.matrix, id.vars=c("Species","Elevation","Date","Replicate","Selectivity","Tvisits","bph","Minutes_Total","Minutes_High","Minutes_Low"),measure.vars=c("fl_all","fl_s"))
+
+ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=log(fl_s),y=bph)) + geom_point() + facet_wrap(~Species,scale="free") + geom_smooth(method="glm",family="poisson") + theme_bw() + labs(x="Log Abundance of Preferred Resources",y="Birds per hour")
+ggsave("Figures/bphresources.jpg",height=6,width=7,dpi=600)
+```
 #Analysis of Niche Overlap
 
 ```{r}
@@ -859,6 +873,79 @@ null_niche<-sapply(nullmodel(FH),function(x){
 ggplot() + geom_histogram(data=data.frame(null_niche),aes(x=null_niche)) + theme_bw() + geom_vline(xintercept=networkL,linetype='dashed',col='grey50',size=1.5) + xlab("Niche Overlap") 
 ggsave("Figures/NicheOverlap.jpg",units="in",width=5,height=3,dpi=600)
 
+```
+
+
+#Displacement analysis
+
+How many seconds between feeding events?
+We will do this for each row in each trial.
+
+```{r}
+sdat<-split(dat,list(dat$Date,dat$Elevation,dat$Replicate,dat$Treatment),drop = T)
+datd<-rbind.fill(lapply(sdat,function(x){
+  x<-x[order(x$Time_Stamp),]
+  #make column to fill with time stampa difference
+  x$DiffTime<-NA
+  for(d in 1:(nrow(x)-1)){
+  x$DiffTime[d+1]<-as.numeric(difftime(x$Time_Stamp[d+1],x$Time_Stamp[d],units = "secs"))
+  }
+  return(x)
+}))
+
+#for each displacement event get information and change
+
+dspl<-which(datd$DiffTime<30)
+
+out<-list()
+for(i in 1:length(dspl)){
+  x<-dspl[i]
+out[[x]]<-data.frame(Date=datd[x,"Date"],Replicate=datd[x,"Replicate"],Treatment=datd[x,"Treatment"],Elevation=datd[x,"Elevation"],Holder=datd[x-1,"Species"],Intruder=datd[x,"Species"])  
+}
+displ.df<-rbind.fill(out)
+
+displm<-melt(table(displ.df$Holder,displ.df$Intruder,displ.df$Treatment))
+
+#take out intraspecific since we can't tell if its the same individual
+colnames(displm)<-c("Holder","Intruder","Treatment","value")
+displm<-displm[!displm$Holder==displm$Intruder,]
+displm<-displm[displm$Treatment %in% c("H","L"),]
+
+#create come meaningful order
+#doesn't like the name value
+colnames(displm)[4]<-"val"
+hord<-displm %>% group_by(Holder) %>% summarise(s=sum(val)) %>% arrange(s) %>% select(Holder) %>% as.vector()
+
+displm$Holder<-factor(displm$Holder,levels=hord$Holder)
+
+Iord<-displm %>% group_by(Intruder) %>% dplyr::summarize(s=sum(val)) %>% arrange(desc(s)) %>% select(Intruder) %>% as.vector()
+displm$Intruder<-factor(displm$Intruder,levels=Iord$Intruder)
+
+#remove all non interactions
+displm<-droplevels(displm[!displm$val==0,])
+
+#plot
+ggplot(displm,aes(x=Intruder,y=Holder,fill=val)) + geom_tile() + scale_fill_continuous(low="blue",high="red") + theme_bw() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + facet_wrap(~Treatment) + labs(fill="Displacements")
+
+#as a function of relatedness and morphological similarity
+#phylo
+displm$Phydist<-NA
+for(x in 1:nrow(displm)){
+  #get scientific name
+  h<-displm[x,"Holder"]
+  hsp<-unique(selective.matrix[selective.matrix$Species %in% h,"Row.names"])
+  
+  I<-displm[x,"Intruder"]
+  Isp<-unique(selective.matrix[selective.matrix$Species %in% I,"Row.names"])
+  #if we don't have records, then skip
+  if(length(hsp)==0|length(Isp)==0){next}
+  displm$Phydist[x]<-ctrx[hsp,Isp]
+  displm$Morphdist[x]<-d.pca[displm[x,"Holder"],displm[x,"Intruder"]]
+}
+
+displm<-melt(displm,measure.vars = c("Morphdist","Phydist"))
+colnames(displm)[6]<-c("distance")
+ggplot(displm,aes(x=distance,y=val,col=variable)) + geom_point(size=3) + geom_smooth(method="glm",family="poisson") + facet_grid(Treatment~variable,scales="free") 
 ```
 
 ```{r}
