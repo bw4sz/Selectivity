@@ -701,11 +701,11 @@ selective.matrix[,c("fl_all", "fl_s")]<-foreach(g=1:nrow(selective.matrix),.comb
 flowerplot<-melt(id.var=c("Species","Selectivity","Minutes_Total","bph"),measure.vars=c("fl_s","fl_all"),data=selective.matrix)
 
 
-resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable,size=Minutes_Total)) + geom_point() +  stat_smooth(show_guide=F,method="glm",family="binomial",aes(weight=Minutes_Total,group=variable))
+resourceplotS<-ggplot(flowerplot[flowerplot$Species %in% keep,],aes(x=value,linetype=variable,y=Selectivity,col=variable,shape=variable,size=Minutes_Total)) + geom_point() +  stat_smooth(show_guide=F,method="glm",family="binomial",aes(weight=Minutes_Total,group=variable,col=variable))
 
-resourceplotS+ facet_wrap(~Species,scales="free_x",nrow=3) + labs(x="Available Resources") + theme_gray() + scale_color_manual(values=c("black","grey40"),"Resource Model",labels=c("Favored Resources","All Resources")) + scale_linetype_discrete(guide="none") + labs(size="Minutes") + theme_bw()
+resourceplotS+ facet_wrap(~Species,scales="free_x",nrow=3) + labs(x="Available Resources") + theme_gray() + scale_color_manual(values=c("black","grey40"),"Resource Model",labels=c("Preferred Resources","All Resources")) + scale_shape_manual("Resource Model",labels=c("Preferred Resources","All Resources"),values=c(16,17)) + scale_linetype_discrete(guide="none") + labs(size="Minutes") + theme_bw()
 
-ggsave("Figures/Resource_Selectivity.jpeg",dpi=300,height=7,width=10,units="in")
+ggsave("Figures/Resource_Selectivity.jpeg",dpi=300,height=7,width=10.5,units="in")
 ```
 
 #Model Fitting
