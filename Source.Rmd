@@ -62,7 +62,7 @@ source(paste(gitpath,"functions.R",sep=""))
 droppath<-"C:/Users/Ben/Dropbox/"
 
 ##Load image if needed
-#load("Selectivity.RData")
+load("Selectivity.RData")
 
 #Read in feeder data
 dat<-read.csv(paste(droppath,"Thesis//Maquipucuna_SantaLucia/Data2013/csv/CompetitionFeeders.csv",sep=""))
@@ -548,7 +548,7 @@ selective.matrix$PC1D<-sapply(1:nrow(selective.matrix),function(y){
   #get trial, with all species not included in the focal y row
   trialT<-selective.matrix[selective.matrix$Elevation %in% x[["Elevation"]]& selective.matrix$Date %in% x[["Date"]] & selective.matrix$Replicate %in% x[["Replicate"]] & !selective.matrix$Species==x[["Species"]] ,]  
   
-  #create the mass "environment" ie mean mass difference between the focal species and all competitors, weighted by time feeding.
+  #create the morph "environment" ie mean mass difference between the focal species and all competitors, weighted by time feeding.
   #first get mass difference by each species and their time
   diff<-x$PC1 - trialT$PC1
   
@@ -859,8 +859,8 @@ ggplot(gvisit[gvisit$Species %in% keep,],aes(x=fl_s,y=value,col=variable)) + geo
 #Total minutes
 gvisit<-melt(selective.matrix, id.vars=c("Species","Elevation","Date","Replicate","Selectivity","Tvisits","bph","Minutes_Total","Minutes_High","Minutes_Low"),measure.vars=c("fl_all","fl_s"))
 
-ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=log(fl_s),y=bph)) + geom_point() + facet_wrap(~Species,scale="free") + geom_smooth(method="glm",family="poisson") + theme_bw() + labs(x="Log Abundance of Preferred Resources",y="Birds per hour")
-ggsave("Figures/bphresources.jpg",height=6,width=7,dpi=600)
+ggplot(selective.matrix[selective.matrix$Species %in% keep,],aes(x=fl_s,y=bph)) + geom_point() + facet_wrap(~Species,scale="free") + geom_smooth(method="glm",family="poisson",col="black") + theme_bw() + labs(x="Log Abundance of Preferred Resources",y="Birds per hour")
+ggsave("Figures/bphresources.jpg",height=5,width=9,dpi=600)
 ```
 #Analysis of Niche Overlap
 
