@@ -1,7 +1,8 @@
-Automated monitoring reveals diverse effects of abiotic and biotic factors on behavioral dominance in Andean Hummingbirds
-===========
+#Evaluating broad scale patterns among related species using resource experiments in tropical hummingbirds
 
+Manuscript prepared for “Articles” section of Ecology
 
-*Ben Weinstein* - Code and Project Design
-
-*Lisa Dittmar* and *Ben Weinstein* reviewed the videos
+*Ben G. Weinstein*, corresponding author, email: benjamin.weinstein@stonybrook.edu
+Department of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA
+Catherine H. Graham, email: catherine.graham@stonybrook.edu
+Department of Ecology and Evolution, Stony Brook University, Stony Brook, New York 11794; USA 
