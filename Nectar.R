@@ -10,6 +10,7 @@ require(reshape)
 require(taxize)
 library(ggbiplot)
 library(stringr)
+library(plyr)
 library(dplyr)
 
 #############
